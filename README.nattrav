@@ -1,0 +1,165 @@
+This document expands on the README document - you should read that first.
+-----------------------------------------------------------------------------
+
+The Grapple Nat Traversal System is a system to allow games to be hosted on
+computers that are on the inside of firewalls or NAT address pooling
+systems.
+
+-----------------------------------------------------------------------------
+AN OVERVIEW OF THE PROBLEM
+
+If you have, lets say three computers on your home network, all connected to
+the internet through a router using NAT. This will mean that each of
+your computers will connect to the outside world using the IP address of the
+NAT router. This is fine, until you want to run a server to come into the
+computer, like a game. If you start a game server, how will your router
+know that people connecting to the IP address you have are trying to
+go to your machine and not one of the other two machines in the house. To the
+outside world, they are all the same.
+When you start a connection, say to a webpage, the router knows how to respond
+to the data being returned, from in this case the webserver, because it knows
+that your computer was the one to connect to the webpage.
+You can tell your router, when you set up a game, that connections to the game
+should to to you.
+However this is time consuming and most people have no idea how!
+
+-----------------------------------------------------------------------------
+
+Grapple's NAT traversal performs a series of tasks behind the scenes that
+allows you to have connections from the outside go to your computer. This
+ONLY currently works for UDP data.
+It doesn't always work, some routers are set up to prevent NAT traversal,
+and for that there is no current workaround (later versions of Grapple may
+include a data relay, which will allow this feature). 
+
+As an example, here is a simple demonstration of how this works.
+
+Firstly, someone must set up a nattrav server. This must be on a computer
+that has full unfiltered internet access, so not behind a firewall or NAT
+
+SETTING UP A NATTRAV SERVER
+---------------------------
+The code to set up a server is simply:
+
+server=grapple_server_init("testgame","1");
+grapple_server_ip_set(server,"123.456.78.90");
+grapple_server_port_set(server,1234);
+grapple_server_protocol_set(server,GRAPPLE_PROTOCOL_UDP);
+grapple_server_session_set(server,"Stun Server"); //Can be anything
+grapple_server_set_as_nattrav_server(server,"123.456.78.91",1235,1236,1);
+grapple_server_start(server);
+
+This new line, grapple_server_set_as_nattrav_server should be explained.
+
+Two different servers are needed for full NAT traversal. They need to be on
+different IP addresses. This can be 2 IP addresses on one machine, or on two
+separate machines. The 2nd and 3rd parameters passed into this function tells
+one server where the second will be located. It should also be on a different
+port number.
+The 4th parameter is an extra portnumber that the server needs to be able to
+fully perform NAT traversal. It can be anything, as long as it isn't the same
+as the other ports, or the main port the server is bound to.
+
+The final parameter is whether to enable the TURN protocol. TURN is a
+last-ditch method of performing NAT traversal, but it has serious overhead
+considerations and should be fully understood before enabling it. TURN is
+described below.
+
+So, now you have one server set up, you need to set up the second server, the
+one mentioned in this ones setup
+
+server2=grapple_server_init("notused","notused"); //These values are ignored
+grapple_server_ip_set(server2,"123.456.78.91");
+grapple_server_port_set(server2,1235);
+grapple_server_protocol_set(server2,GRAPPLE_PROTOCOL_UDP);
+grapple_server_session_set(server2,"Stun Server"); //Can be anything
+grapple_server_set_as_nattrav_server(server2,"123.456.78.90",1234,1237);
+grapple_server_start(server2);
+
+This server is now pointing back at the first server so that the two can work
+as a pair. Note that the parameters set in the function are the same address
+as the first server.
+
+That's it for the server. Leave those two running in a loop, and they will just
+look after themselves.
+
+
+SETTING UP A NATTRAV SERVER CLIENT
+----------------------------------
+Setting up a game server to be a nattrav client is even easier.
+
+server=grapple_server_init("testgame","1.0");
+grapple_server_ip_set(server,NULL);
+grapple_server_port_set(server,3000);
+grapple_server_protocol_set(server,GRAPPLE_PROTOCOL_UDP);
+grapple_server_session_set(server,"My Game"); //Can be anything
+grapple_server_nattrav_address(server,"123.456.78.90",1234);
+grapple_server_start(server);
+
+
+And that is all. Point the new line, grapple_server_nattrav_address, at either
+of the two servers, it doesn't matter. Both act the same.
+
+If, using this code, you printed out the result of
+grapple_server_address_get() and grapple_server_port_get() you would see
+the address that the rest of the world sees. If you didn't run this extra
+line, then if you are behind a firewall or NAT, then there is pretty much no
+way to know your address for people to connect to without fiddling
+with your router.
+
+Of course, how can you use this. You could have the game print its address 
+onscreen and you can tell people the address, or you can use the grapple
+lobby. The lobby is designed to connect people to the address that the server
+shows it. When NAT Traversal has been used, this will be the address you
+want people to see. If you are behind a NAT or Firewall, and connect to a
+lobby without using NAT Traversal, you will not be able to let people join 
+your game.
+
+To take full advantage of NAT traversal, you must also tell each client where
+the server is. At the same point in the negotiation, run
+
+  grapple_client_nattrav_address(client,"87.117.204.74",1999);
+
+
+If you are NOT behind a NAT or Firewall, then don't worry. You can use Grapple
+NAT Traversal anyway, it will just know you are on an open internet
+connection and not change anything. It doesn't hurt to use it if you
+don't need it.
+
+-----------------------------------------------------------------------------
+
+Downsides to NAT Traversal.
+
+There are a couple of downsides to consider when considering using NAT
+Traversal. 
+
+Firstly is that it takes a small amount of time (usually less than a second
+but sometimes up to 4 or 5 seconds) longer to start your game, and for each
+user to connect to it. Yes, this is a problem but, it prevents the situation
+where nobody at all can connect to it ever.
+
+Secondly, is that you need to host two Nat Traversal Servers somewhere. This
+is often a difficult problem for people with limited resources. It is common
+for the people that make a game that uses NAT Traversal to host the
+server for it. Not all game developers will be able to though.
+
+-----------------------------------------------------------------------------
+The TURN protocol
+
+TURN is a great way to get round almost any NAT traversal problems. However 
+it has a serious downside in that the NAT Traversal Server you have created
+will have to relay every single bit of data between the server, and the
+TURN requiring clients.
+
+This can lead to enormous bandwidth overheads, and so TURN is enabled
+separately from other protocols.
+
+TURN is always used as a last ditch connection method. Only after STUN
+and reverse STUN have both failed, will TURN be used.
+
+-----------------------------------------------------------------------------
+
+The technical bit
+
+Currently Grapple's NAT Traversal system implements a version of the STUN
+protocol.

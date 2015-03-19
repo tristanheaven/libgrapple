@@ -1,0 +1,1189 @@
+This README documents the Grapple API version 0.9.5
+
+---------------------------------------------------------------------------
+About Grapple
+-------------
+
+Grapple was written in 2006 by Michael Simms from Linux Game Publishing LTD
+and is released under the GNU LGPL (see the file LICENSE).
+
+A shameless plug that we deserve cos we wrote Grapple:
+http://www.linuxgamepublishing.com - go buy our games!
+
+Grapple is a high level network layer designed to remove the hard work from
+making applications multiuser. It was designed with games in mind, but there
+is no reason to stop grapple being used for any application.
+
+Grapple supports simple development of networked applications using both
+TCP/IP and UDP/IP. Grapple keeps track of connections to a server, relays
+messages from client to client, all without the need to understand any
+complicated network code. Grapple's feature list is as follows
+
+Simple client-server networking
+Keeps all clients aware of all other clients
+Network messaging by either a push or a pull model, or a mixture of both
+Unlimited connections to multiple servers.
+Multiple methods of querying users
+Data transfer via TCP, UDP, or reliable UDP
+Passworded servers
+User Groups for client bandwidth saving
+Server security - server can disconnect any client
+Network load reacting data transmission and retransmission
+Background pinging to monitor network states
+A fully functional lobby system (see README.lobby)
+
+---------------------------------------------------------------------------
+Includes
+
+All grapple functionality is accessed from the headerfile 
+
+#include <grapple.h>
+
+---------------------------------------------------------------------------
+Linking
+
+To link Grapple, the library
+
+libgrapple.so
+
+or the archive
+
+libgrapple.a
+
+should be linked. Also, the libraries -lpthread and -lcrypt are required.
+
+---------------------------------------------------------------------------
+ERROR HANDLING
+
+Any function may produce an error
+
+GRAPPLE_ERROR is the standard return value from a failed function, this is
+listed in the function itself if this is not the case.
+
+To find the value of the last error generated on an object, you may use
+
+grapple_error grapple_client_error_get(grapple_client)
+or
+grapple_error grapple_server_error_get(grapple_server)
+
+This can be converted into a text string using
+
+const char *grapple_error_text(grapple_error)
+
+calling grapple_*_error_get will reset the value of the last error.
+
+The possible values of a grapple_error are as follows:
+
+GRAPPLE_NO_ERROR
+GRAPPLE_ERROR_NOT_INITIALISED
+GRAPPLE_ERROR_SERVER_CONNECTED
+GRAPPLE_ERROR_SERVER_NOT_CONNECTED
+GRAPPLE_ERROR_CLIENT_CONNECTED
+GRAPPLE_ERROR_CLIENT_NOT_CONNECTED
+GRAPPLE_ERROR_ADDRESS_NOT_SET
+GRAPPLE_ERROR_PORT_NOT_SET
+GRAPPLE_ERROR_NAME_NOT_SET
+GRAPPLE_ERROR_NAME_NOT_UNIQUE
+GRAPPLE_ERROR_SESSION_NOT_SET
+GRAPPLE_ERROR_PROTOCOL_NOT_SET
+GRAPPLE_ERROR_CANNOT_CONNECT
+GRAPPLE_ERROR_NO_SUCH_USER
+GRAPPLE_ERROR_SERVER_CANNOT_BIND_SOCKET
+
+---------------------------------------------------------------------------
+STARTING A SERVER
+
+Starting a server is as simple as the following
+
+grapple_server server;
+
+server=grapple_server_init("testgame","1");
+grapple_server_ip_set(server,"127.0.0.1");   //OPTIONAL FUNCTION
+grapple_server_port_set(server,1234);
+grapple_server_protocol_set(server,GRAPPLE_PROTOCOL_UDP);
+grapple_server_session_set(server,"Play my game");
+grapple_server_start(server);
+
+Now for the details:
+
+grapple_server
+
+This is a reference to the server, it is simply an integer, but is used to
+reference the server you have created for all grapple functions
+
+grapple_server grapple_server_init(const char *name,const char *version)
+
+This function initialises the server, it is always the first server
+function you should call. The two values passed to this function, the name
+and version, are simply two strings, they can be anything, they are used
+to ensure that, when the client connects, they are connecting
+to the same game and the same version of the game.
+
+int grapple_server_ip_set(grapple_server server,const char *ip)
+
+This function sets the interface that the server should bind to to listen
+for connections. This is an OPTIONAL value, if not set, then the server
+binds to all IP addresses present. 
+
+int grapple_server_port_set(grapple_server server,int port)
+
+This function sets the port number that the server should bind to to listen
+for connections. This must be set before running grapple_server_start
+
+int grapple_server_protocol_set(grapple_server server,
+	                        grapple_protocol protocol)
+
+This function defines whether the server will be based on TCP or UDP. This
+must be set before running grapple_server_start. The possible protocol
+values are shown in grapple_protocols.h
+
+int grapple_server_session_set(grapple_server server,const char *session)
+
+This function sets the name of the session, effectively the name of this
+particular multiplayer game session. It can be anything the user wants it
+to be.
+
+int grapple_server_start(grapple_server server)
+
+This function starts the server, and listens for connections. From this point
+you can ask the server if it has any messages about new connections.
+
+OTHER SERVER OPTIONS
+
+int grapple_server_maxusers_set(grapple_server server,int maxusers)
+
+This limits the number of verified users that can connect to the server. This
+is optional
+
+int grapple_server_password_set(grapple_server server,const char *password)
+
+This sets a connection password that the client will need to enter before
+they can connect. This is optional.
+
+This limits the number of verified users that can connect to the server.
+
+**************NOTE********************
+
+If you start a server, but also wish to be considered a client, you must ALSO
+start a client. The server does NOT act as a client
+
+**************************************
+---------------------------------------------------------------------------
+STARTING A CLIENT
+
+Starting a client is as simple as the following
+
+grapple_client client=0;
+client=grapple_client_init("testgame","1");
+grapple_client_address_set(client,NULL);
+grapple_client_port_set(client,1234);
+grapple_client_protocol_set(client,GRAPPLE_PROTOCOL_UDP);
+grapple_client_start(client,0);
+grapple_client_name_set(client,name);
+
+Now for the details:
+
+grapple_client
+
+This is a reference to the client, it is simply an integer, but is used to
+reference the client you have created for all grapple functions
+
+grapple_client grapple_client_init(const char *name,const char *version)
+
+This function initialises the client, it is always the first client
+function you should call. The two values passed to this function, the name
+and version, are simply two strings, they can be anything, they are used
+to ensure that, when the client connects, they are connecting
+to the same game and the same version of the game that the server is running.
+As such these values must exactly match the values used when initialising the
+server
+
+int grapple_client_address_set(grapple_client client,const char *address)
+
+This sets the DNS or IP address of the server you wish to connect to. 
+The address can be left as NULL to connect to a server on localhost, which
+is useful if you are the server connecting your game client to yourself.
+This must be set before running grapple_client_start
+
+
+int grapple_client_port_set(grapple_client client,int port)
+
+This sets the port number of the server you wish to connect to. 
+This must be set before running grapple_client_start
+
+int grapple_client_protocol_set(grapple_client client,
+				grapple_protocol protocol)
+
+
+This function defines whether the client will be based on TCP or UDP. This
+must be set before running grapple_client_start. The possible protocol
+values are shown in grapple_protocols.h
+
+int grapple_client_name_set(grapple_client client,const char *name)
+
+This function sets an name for this client, which is then
+passed to the server. The server does NOT check whether the name
+is unique. This can be called at any time after grapple_client_init. It is
+not required to set a name, this is given as extra functionality
+
+int grapple_client_start(grapple_client client,int flags)
+
+This function starts the client, and connects it to the server. From this
+point you can ask the client if it has any messages from the server.
+NOTE: Running grapple_client_start does not always guarantee that you
+will be connected. You will know you are connected with you receive a message
+containing GRAPPLE_MSG_NEW_USER_ME which gives you your server assigned ID.
+You can still at this stage receive a GRAPPLE_MSG_CONNECTION_REFUSED
+if the internal handshaking determines you are running a different game, or
+the target game is full or closed.
+To start the client and wait for all of this to complete, use GRAPPLE_WAIT
+as a flag. If you do this - note it IS possible (though unlikely) to get
+messages back from the callback system if you are using callbacks, before this
+function returns.
+
+---------------------------------------------------------------------------
+SIMPLEST USAGE
+
+At its simplest, Grapple can be used, once the above has been done, to
+keep variables synchronised between all connected users, and the
+server.
+
+A client process may run the following command
+
+grapple_client_intvar_set(client1,"test_variable",17);
+
+for example.
+
+All connected clients, and the server, will then receive the number 17 by doing
+
+grapple_client_intvar_get(client2,"test_variable");
+
+No need to understand anything about the underlying network, it just keeps
+things in sync. Any client or the server can easilly modify any grapple
+synchronised variable in this way, and all clients will have the latest value
+sent to them to look at.
+
+Points to note about this method is that a client can set a value, and it will
+take some time (measured in milliseconds but it is still there) until the other
+clients and server receive this new value. As such there is always a small
+window of latency. This shouldnt be a problem for most applications but bears
+noting in case aplications are time sensitive for this kind of thing.
+
+As well as ints, doubles can be sunchronised in this way
+
+grapple_client_intvar_set(client1,"test_double",1.234);
+grapple_client_intvar_get(client2,"test_double");
+
+And finally, any chunk of memory can be synchronised using
+
+grapple_client_datavar_set(client1,"test_chunk",data_pointer,sizeof_data);
+
+Bear in mind that this copies the EXACT memory, so if you send a structure,
+for example, with char *'s in it, it will copy the memory address of the
+char *'s and not the char *'s themselves. The values at the other end
+will be identical, but meaningless as the pointers in the structure will point
+to memory that isnt allocated on the other machines.
+
+Retrieving a data chunk is a little more involved
+
+void *datachunk;
+size_t datasize;
+
+grapple_client_datavar_get(client2,"test_chunk",NULL,&datasize);
+
+The return value of this call will either be GRAPPLE_OK or GRAPPLE_FAILED
+
+If the result is GRAPPLE_OK, then the size of the memory needed to get the
+data chunk will be placed into the datasize variable.
+
+Following this you can do
+
+datachunk=malloc(datasize);
+grapple_client_datavar_get(client2,"test_chunk",datachunk,&datasize);
+
+NOTE:
+Just because you know the size of the memory needed after the first call,
+nothing locks the variable from being changed again by other clients. If
+you do not have enough memory in this second call to grapple_client_datavar_get
+then GRAPPLE_FAILED will be returned, and the new size needed will be
+placed into the datasize variable. It is up to the programmer using Grapple
+to decide on appropriate systems to deal with this, but a simple solution is
+to always allocate enough memory based on the patterns of the data being
+used.
+
+The server can access and set variables in exactly the same way, exept using
+the funcions
+
+void grapple_server_intvar_set(grapple_server,const char *,int);
+int grapple_server_intvar_get(grapple_server,const char *);
+void grapple_server_doublevar_set(grapple_server,const char *,double);
+double grapple_server_doublevar_get(grapple_server,const char *);
+void grapple_server_datavar_set(grapple_server,const char *,void *,size_t);
+int grapple_server_datavar_get(grapple_server,const char *,void *,size_t *);
+
+WARNING:
+Keeping large blocks of data synchronised in this manner can lead to high
+bandwidth. Any change that is made to a block of data and then synchronised
+will send the whole block of data to the server which will then send it to
+all clients. This will lead to the server sending a lot of data - change
+a 10K chunk and send it to 10 players, thats 100K of data from the server
+each time it is changed.
+
+---------------------------------------------------------------------------
+SERVER ACCEPTING CONNECTIONS
+
+The server will notify you when a new user has connected by placing a message
+in the incoming message queue
+
+---------------------------------------------------------------------------
+READING MESSAGES (server)
+
+Any information you need to know will be placed in the message queue.
+
+For the server, there is a message queue for the server which handles the
+messages from all connected clients. 
+For the client there is a single queue for communicating with the server.
+
+The first message you will need to look for, is the server telling you that
+a new client has connected.
+
+To check the server message queue use the following example:
+
+if (grapple_server_messages_waiting(server))
+  {
+    message=grapple_server_message_pull(server);
+
+    switch (message->type)
+    {
+    case GRAPPLE_MSG_NEW_USER:
+      //Your code to handle this message
+      break;
+    case GRAPPLE_MSG_USER_NAME:
+      //Your code to handle this message
+      break;
+    case GRAPPLE_MSG_USER_MSG:
+      //Your code to handle this message
+      break;
+    case GRAPPLE_MSG_USER_DISCONNECTED:
+      //Your code to handle this message
+      break;
+    }
+    grapple_message_dispose(message);
+  }
+
+
+This can be broken down as follows:
+
+int grapple_server_messages_waiting(grapple_server server)
+
+This will return 1 if there are any messages waiting for the server, or 0
+if none are waiting. 
+
+grapple_message *grapple_server_message_pull(grapple_server server)
+
+This takes the first message from the server queue, and populates it
+in the grapple_message data structure. This structure changes depending
+on which message was received.
+
+You can query the message type by looking at the value of message->type
+
+The content of messages is shown below
+
+Once the message has been handled, then the message must be destroyed, or
+memory leaks will occur.
+
+void grapple_message_dispose(grapple_message *message)
+
+This function destroys all memory associated with this message. You must
+ensure you have copied, not referenced, any data from here that you wish
+to retain.
+
+---------------------------------------------------------------------------
+READING MESSAGES (client)
+
+Reading a message from the client is almost exactly the same as reading a
+message from the server, and the same principles apply
+
+  grapple_message *message;
+
+  while (grapple_client_messages_waiting(client))
+    {
+      message=grapple_client_message_pull(client);
+
+      switch (message->type)
+	{
+	case GRAPPLE_MSG_NEW_USER:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_NEW_USER_ME:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_USER_NAME:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_SESSION_NAME:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_USER_MSG:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_USER_DISCONNECTED:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_SERVER_DISCONNECTED:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_CONNECTION_REFUSED:
+          //Your code to handle this message
+	  break;
+	case GRAPPLE_MSG_PING:
+          //Your code to handle this message
+	  break;
+	}
+      grapple_message_dispose(message);
+    }
+
+
+This can be broken down as follows:
+
+int grapple_client_messages_waiting(grapple_client client)
+
+This will return 1 if there are any messages waiting for the client, or 0
+if none are waiting. 
+
+grapple_message *grapple_client_message_pull(grapple_client client)
+
+This takes the first message from the server queue, and populates it
+in the grapple_message data structure. This structure changes depending
+on which message was received.
+
+You can query the message type by looking at the value of message->type
+
+This has the following values
+
+  GRAPPLE_MSG_NEW_USER
+
+    With this message, one value is included in the message structure NEW_USER
+
+    grapple_user id
+
+    ID is the server generated ID of the user, which will be used to refer
+       to this user when sending them messages
+
+  GRAPPLE_MSG_NEW_USER_ME
+
+    With this message, one value is included in the message structure NEW_USER
+
+    grapple_user id
+
+    ID is your server generated ID. This should be the first message that
+       is ever sent to a client from the server (but this is not guaranteed)
+
+
+  GRAPPLE_MSG_USER_NAME
+
+    With this message, two values are included in the message structure 
+      USER_NAME
+
+    grapple_user id;
+    char *name;
+
+    ID is the server generated ID of the user that has just set their name
+    NAME is the new name the user has chosen
+
+  GRAPPLE_MSG_SESSION_NAME
+
+    With this message, one value is included in the message structure
+      SESSION_NAME
+
+    char *name;
+
+    NAME is the new name the server has given to this game session
+
+  GRAPPLE_MSG_USER_MSG:
+
+    With this message, three values are included in the message structure 
+      USER_MSG
+    
+    grapple_user id
+    void *data;
+    int length;
+
+    ID is the identity of the sender, or GRAPPLE_SERVER
+    DATA is the data sent from the server
+    LENGTH is the length of the data that is sent
+
+    This is used to send game data to the client from the server
+
+  GRAPPLE_MSG_USER_DISCONNECTED
+
+    With this message, one values is included in the message structure
+      USER_DISCONNECTED
+
+    grapple_user id;
+
+    ID is the id of the user that has just disconnected. Any future messages
+    to this ID will be discarded by the server.
+
+  GRAPPLE_MSG_SERVER_DISCONNECTED
+
+    With this message, no values are included in the message structure
+
+    At this point you are disconnected from the server.
+
+  GRAPPLE_MSG_CONNECTION_REFUSED:
+
+    With this message, one value is included in the message structure
+      CONNECTION_REFUSED
+
+    grapple_connection_refused reason
+
+    The reason you were disconnected can be any of:
+
+      GRAPPLE_NOCONN_VERSION_MISMATCH
+        The game or version information you sent were incorrect
+      GRAPPLE_NOCONN_SERVER_FULL
+        The server has reached its user limit
+      GRAPPLE_NOCONN_SERVER_CLOSED
+        The server is closed to all new connections
+      GRAPPLE_NOCONN_PASSWORD_MISMATCH
+         Invalid password was specified
+
+  GRAPPLE_MSG_PING
+
+    With this message, two values are included in the message structure
+      PING
+
+    grapple_user id
+    double pingtime
+
+    ID is the serverid of the user whose pingdata is received
+    PINGTIME is their ping time
+
+  GRAPPLE_MSG_GROUP_CREATE
+
+    With this message, two values are included in the message structure
+      GROUP
+
+    grapple_user groupid
+    char *name
+
+    GROUPID is the ID of the group that has just been created
+
+    NAME is the name of the group just created
+
+  GRAPPLE_MSG_GROUP_ADD
+
+    With this message, two values are included in the message structure
+      GROUP
+
+    grapple_user groupid
+    grapple_user memberid
+
+    GROUPID is the ID of the group that has had something added to it
+    MEMBERID is the ID of what has just been added
+
+  GRAPPLE_MSG_GROUP_REMOVE
+
+    With this message, two values are included in the message structure
+      GROUP
+
+    grapple_user groupid
+    grapple_user memberid
+
+    GROUPID is the ID of the group that has had something removed from it
+    MEMBERID is the ID of what has just been removed
+
+  GRAPPLE_MSG_GROUP_DELETE
+
+    With this message, one value is included in the message structure
+      GROUP
+
+    grapple_user groupid
+
+    GROUPID is the ID of the group that has just been deleted
+
+
+  GRAPPLE_MSG_YOU_ARE_HOST
+
+    With this message, no parameters are passed
+
+  GRAPPLE_MSG_CONFIRM_RECEIVED
+
+    With this message, one value is included in the message structure
+      CONFIRM
+
+    grapple_confirmid messageid
+
+    MESSAGEID is the ID of the message that is confirmed to be successful
+
+  GRAPPLE_MSG_CONFIRM_TIMEOUT
+
+    With this message, three values are included in the message structure
+      CONFIRM
+
+    grapple_confirmid messageid
+    int usercount
+    grapple_user *timeouts
+
+    MESSAGEID is the ID of the message that is confirmed to have had failures
+    USERCOUNT is the number of elements in the timeouts variable
+    TIMEOUTS is an array of user IDs that have failed to confirm receipt
+
+  GRAPPLE_MSG_GAME_DESCRIPTION
+
+    With this message, two values are included in the message structure
+      GAME_DESCRIPTION
+
+    void *description
+    int length
+
+    DESCRIPTION is the data of the binary data set as the game description
+    LENGTH is the length of this data
+
+An example of accessing the content would be to use
+
+message->USER_NAME.name
+
+
+void grapple_message_dispose(grapple_message *message)
+
+This function destroys all memory associated with this message. You must
+ensure you have copied, not referenced, any data from here that you wish
+to retain.
+
+---------------------------------------------------------------------------
+READING MESSAGES VIA CALLBACKS
+
+Instead of pulling messages from the queue, you can use a callback. This will
+force grapple to call that function whenever a specific message type
+is received.
+
+void grapple_client_callback_set(grapple_client client,
+                                 grapple_messagetype message,
+	                         grapple_callback callback,
+                                 void *context)
+void grapple_client_callback_setall(grapple_client client,
+	                            grapple_callback callback,
+	                            void *context)
+
+void grapple_server_callback_set(grapple_server server,
+				 grapple_messagetype message,
+				 grapple_callback callback,
+				 void *context)
+void grapple_server_callback_setall(grapple_server server,
+				    grapple_callback callback,
+				    void *context)
+
+This sets the callback to be used. The messagetype shows the messagetype for
+the callback to be triggered on. The context will be passed back to the
+function that is the callback. The callback argument is the function
+that is to be called.
+
+This callback function must be of the type
+
+int callback (grapple_message *message,void *context)
+
+Whenever a message of the matching type is found, this function will be
+called, with context being populated by the context passed into the
+initial callback_set function and message being populated with a message in
+exactly the same format as above.
+
+IMPORTANT: 2 things need to be remembered when using this method
+
+1) You must destroy the message object when you are finished with it
+2) The callback is called within a thread, and as such you must protect
+  the data with mutexes or other methods to prevent clashes of data between
+  threads (the same callback could be running several times at once.
+
+To remove a callback use:
+
+void grapple_server_callback_unset(grapple_server server,
+				   grapple_messagetype message)
+void grapple_client_callback_unset(grapple_client client,
+				   grapple_messagetype message)
+
+
+Any messages that do not match a callback will be added to the queue for the
+user to look at using the pull methods. To ensure all messages are handled
+via the correct callbacks you should set the callbacks before starting the
+client or server you are adding them to (but after init-ing it.
+
+---------------------------------------------------------------------------
+SENDING A MESSAGE (client to server)
+
+The server and client communicate by passing messages between themselves.
+Grapple takes out all the hard work from this, and you simply send a message
+using:
+
+grapple_confirmid grapple_client_send(grapple_client client,
+                                      grapple_user target,
+                                      int flags,void *data,int datalen)
+
+The target is either the id of who you want to send to, or one of the
+three special cases:
+GRAPPLE_EVERYONE
+GRAPPLE_EVERYONEELSE
+GRAPPLE_SERVER
+
+data is any data you wish to send to the server, and datalen is
+the length of this data.
+
+If you are using UDP, and the data must arrive without fail, you must set
+the flag GRAPPLE_RELIABLE.
+
+To send a message and wait until it has been received by all recipients, use
+the flag GRAPPLE_WAIT
+
+---------------------------------------------------------------------------
+SENDING A MESSAGE (server to client)
+
+grapple_confirmid grapple_server_send(grapple_server server,
+                                      grapple_user target,
+                                      int flags,void *data,int datalen)
+
+Send to a specific user, using the server generated ID that was passed
+to the server when the server informed of their connection. You can also
+use the special value GRAPPLE_EVERYONE to send a message to all users
+
+As with the client, if you are using UDP and need reliable data, you must
+use the flag GRAPPLE_RELIABLE
+
+To send a message and wait until it has been received by all recipients, use
+the flag GRAPPLE_WAIT
+
+---------------------------------------------------------------------------
+GROUP HANDLING
+
+It is possible to set up groups of users, and send messages to them
+as a whole group using the grapple_client_send function and using the
+groupid as the target for the message.
+
+grapple_user grapple_client_group_create(grapple_client client,
+                                         const char* password)
+grapple_user grapple_server_group_create(grapple_server server,
+                                         const char *password)
+
+  This creates a new group. The value returned is the ID of the group, or
+  0 on failure. The password is optional. If set to anything other than
+  NULL, the password will be required from anyone that attempts to join
+  the group.
+
+int grapple_client_group_add(grapple_client client,grapple_user groupid,
+                             grapple_user memberid,const char *password)
+int grapple_server_group_add(grapple_server server,grapple_user groupid,
+                             grapple_user memberid,const char *password)
+
+  This adds a user or group (memberid), to an existing group (groupid).
+  If the group requires a password, then the password sent to this
+  function must match. If no password is needed, then the password
+  supplied here is ignored
+
+int grapple_client_group_remove(grapple_client client,grapple_user groupid,
+                                grapple_user memberid)
+int grapple_server_group_remove(grapple_server server,grapple_user groupid,
+                                grapple_user memberid)
+
+  This removes a user or group (memberid), from an existing group (groupid).
+
+int grapple_client_group_delete(grapple_client client,grapple_user groupid)
+int grapple_server_group_delete(grapple_server server,grapple_user groupid)
+
+  This destroys a group (groupid).
+
+Groups are kept in sync between all players and the server. It is possible
+to send messages to the whole group by simply using the group ID instead of
+a user ID for any of the sending methods.
+
+When a change is made to a group, all other players and the server 
+are notified of the change via the message system. The messages are 
+described above.
+
+It is quite possible to have groups included as members of groups, The
+message system will recursively work its way down the tree, resolving
+all members that need to receive the message, and avoiding recursive
+or multiple references.
+
+Groups can be given names. The group can then be looked up by its name,
+using:
+
+grapple_user grapple_client_group_from_name(grapple_client client,
+                                            const char *name)
+grapple_user grapple_server_group_from_name(grapple_client client,
+                                            const char *name)
+
+where the value returned is the ID of the group
+
+---------------------------------------------------------------------------
+ENUMERATING USERS
+
+It is possible to cause a function to be applied to each connected
+user. This is done as follows:
+
+grapple_client_enumusers(grapple_client client,
+                         grapple_user_enum_callback callback,
+                         void *context)
+
+this will cause the function passed as callback to be called for each user
+connected to the client.
+
+The callback function has the following form
+
+bool callback(grapple_user userid, const char *username,unsigned long flags,
+              void *context)
+
+The context is the same as is passed to the initial function.
+
+Currently the flags value is always 0
+
+The server has an equivalent function
+
+int grapple_server_enumusers(grapple_server server,
+                             grapple_user_enum_callback callback,
+                             void *context);
+
+You can also enumerate members of a group
+
+int grapple_server_enumgroup(grapple_server server,
+                             grapple_user groupid,
+                             grapple_user_enum_callback callback,
+                             void *context)
+int grapple_client_enumgroup(grapple_client client,
+                             grapple_user groupid,
+                             grapple_user_enum_callback callback,
+                             void *context)
+
+This works in exactly the same way, but only enumerates the users who are
+members of group GROUPID (or in the tree of that group).
+
+A slightly different enumeration is available, enumerating the groups that
+are available
+
+int grapple_server_enumgrouplist(grapple_server server,
+                                 grapple_user_enum_callback callback,
+                                 void *context)
+int grapple_client_enumgrouplist(grapple_server client,
+                                 grapple_user_enum_callback callback,
+                                 void *context)
+
+These two functions enumerate the list of groups, not users. The name
+of the group and the groupid are the values passed into the callback, which
+is of the same format
+
+---------------------------------------------------------------------------
+REMOVING A CLIENT FROM A SERVER
+
+In the event you need to disconnect a client
+
+int grapple_server_disconnect_client(grapple_server server,grapple_user target)
+
+This will cause the connection to drop to the client, and the client will
+generate a GRAPPLE_MSG_SERVER_DISCONNECTED message
+
+---------------------------------------------------------------------------
+CLOSING A SERVER OR CLIENT
+
+Closing a server is not required for destroying it, as destroying
+implicitly closes the server or client.
+
+int grapple_server_stop(grapple_server server)
+int grapple_client_stop(grapple_client client)
+
+The main use for this is simply preventing all further processing on
+the affected server or client. They can either then be restarted with
+no further initialisation needed, or can be destroyed.
+
+---------------------------------------------------------------------------
+FINISHING YOUR SESSION
+
+int grapple_server_destroy(grapple_server server)
+
+This will destroy the server and all data connected to it.
+
+int grapple_client_destroy(grapple_client client)
+
+This will destroy the client and all data connected to it.
+
+---------------------------------------------------------------------------
+QUERYING VALUES
+
+Server Queries
+--------------
+The following functions are available for the server to query values that
+have already been set
+
+int grapple_server_port_get(grapple_server server)
+const char *grapple_server_ip_get(grapple_server server)
+grapple_protocol grapple_server_protocol_get(grapple_server server)
+const char *grapple_server_session_get(grapple_server server)
+
+  Return the port number, IP address, protocol and session that the server
+  currently has set. The two that return strings return const values that
+  may NOT be used after the client is destroyed, or the value is changed.
+  The values are changed via the appropriate set functions
+
+int grapple_server_running(grapple_server server)
+
+  Returns true if the server is accepting connections
+
+int grapple_server_maxusers_get(grapple_server server)
+int grapple_server_currentusers_get(grapple_server server)
+
+  Returns the maximum and current users connected respectively
+
+int grapple_server_password_required(grapple_server server)
+
+  Returns true if the server requires a password to connect
+
+grapple_user *grapple_server_userlist_get(grapple_server server)
+
+  Returns an array of all users. This array is NULL terminated.
+  NOTE: The return value is allocated memory and MUST be free()d to prevent
+  memory leaks
+
+int grapple_server_closed_get(grapple_server server)
+
+  Returns whether the server is closed to new connections or not. The values
+  returned are:
+
+    GRAPPLE_SERVER_OPEN
+    GRAPPLE_SERVER_CLOSED
+
+grapple_user grapple_server_group_from_name(grapple_server server,
+                                            const char *name)
+
+  Returns the ID of the group that matches the name passed in. NOTE: Group
+  names are NOT unique and so this function is of limited use. It will
+  return the oldest matching group if more than one group if a name is found
+
+grapple_user *grapple_server_groupusers_get(grapple_server server,
+                                            grapple_user groupid)
+
+  This returns an array containing the list of users in group GROUPID. The
+  array is null terminated
+
+grapple_user *grapple_server_grouplist_get(grapple_server server)
+ 
+  This returns a null terminated array of groups, listing all of the
+  groups on the server.
+
+char *grapple_server_client_address_get(grapple_server server,
+                                        grapple_user user)
+
+  This returns the IP or DNS address of the client requested. It is
+  returned in allocated memory that must be free()d
+
+char *grapple_server_groupname_get(grapple_server,grapple_user)
+
+  Returns the name of the group requested. This name is allocated
+  memory and must be free()d
+
+int grapple_server_maxgroups_set(grapple_server server,int num)
+
+  Limits the server to create num groups. Special values for num
+  are GRAPPLE_GROUPS_DISABLE and GRAPPLE_GROUPS_UNLIMITED.
+
+int grapple_server_maxgroups_get(grapple_server server)
+
+  Returns either the number of groups possible to create, or one of
+  the special values shown above.
+
+grapple_server grapple_server_default_get(void)
+
+  Returns the ID of the default server. 
+
+Client Queries
+--------------
+The following functions are available for the client to query values that
+have already been set
+
+int grapple_client_connected(grapple_client client)
+
+  Returns true if the client is connected to a servers, otherwise false
+
+char *grapple_client_name_get(grapple_client,grapple_user)
+
+  Returns the name of the user whose id is passed in. The return value is
+  allocated memory and must be free()d
+
+grapple_user grapple_client_group_from_name(grapple_client client,
+                                            const char *name)
+
+  Returns the ID of the group that matches the name passed in. NOTE: Group
+  names are NOT unique and so this function is of limited use. It will
+  return the oldest matching group if more than one group if a name is found
+
+grapple_user *grapple_client_groupusers_get(grapple_client client,
+                                            grapple_user groupid)
+
+  This returns an array containing the list of users in group GROUPID. The
+  array is null terminated
+
+grapple_user *grapple_client_grouplist_get(grapple_client client)
+ 
+  This returns a null terminated array of groups, listing all of the
+  groups on the client.
+
+char *grapple_client_groupname_get(grapple_client,grapple_user)
+
+  Returns the name of the group requested. This name is allocated
+  memory and must be free()d
+
+---------------------------------------------------------------------------
+Other features
+
+int grapple_client_messagecount_get(grapple_client client)
+
+Returns the number of messages waiting for the client
+
+---
+
+int grapple_server_messagecount_get(grapple_server server)
+
+Returns the number of messages waiting for the server
+
+---
+
+grapple_user *grapple_client_userlist_get(grapple_client client)
+
+Return an array of grapple_user values (NULL terminated) with the id's of 
+all clients
+
+---
+
+grapple_user *grapple_server_userlist_get(grapple_server server)
+
+Return an array of grapple_user values (NULL terminated) with the id's of 
+all clients connected to the server
+
+---
+
+int grapple_server_closed_get(grapple_server server)
+void grapple_server_closed_set(grapple_server server,int state)
+
+Sets and gets the current 'closed' state of the server. When closed, the
+server will immediately drop any new connections. This is good for not
+having to worry about manually refusing connections when a game is
+in progress, if you want your game to do this. The values to set this
+to are
+
+GRAPPLE_SERVER_OPEN
+GRAPPLE_SERVER_CLOSED
+
+---
+
+int grapple_server_description_get(grapple_server server,
+                                   void *buffer,int *length)
+int grapple_server_description_set(grapple_server server,void *description,
+                                   int length)
+
+Sets and gets the current 'description' of the server. The description
+is a binary data field that can be used to set informtaion about the game,
+either binary data, or simply set some text in there. When set, the data is
+passed to all of the clients, by means of a GRAPPLE_MSG_GAME_DESCRIPTION
+message.
+
+Querying the description is slightly more complex than usual, as it needs to
+return a length and a set of data
+
+Initially, send a request such as:
+
+int length=0;
+grapple_server_description_get(server,NULL,&length);
+
+If the value returned is 1, then there is no description. If it is -1, there is
+an error, if it is 0, then there is a description, and you must allocate
+buffer for it. The size of the buffer needed is set into length
+
+Make a second call using grapple_server_description_get(server,buffer,&length);
+
+This will return the same values, -1, 0, or 1. Here, it CAN be 0 if the value
+has been changed since last querying it. If the value is 1, the data is placed
+in the buffer. The value of length will be modified to the length of the data,
+if it was not as long as could be placed in there.
+
+---
+
+int grapple_client_password_set(grapple_client client,
+				const char *password)
+
+
+This function sets the password that is sent to the server when it tries to
+connect. If required, it must be set before grapple_client_start
+
+---
+
+int grapple_server_password_set(grapple_server server,
+				const char *password)
+
+This function sets the password that required for all clients connecting to
+the server.
+
+---
+
+char *grapple_client_session_get(grapple_client client)
+
+This function returns the current session name, or NULL if there isn't
+one. This is allocated memory and should be destroyed with free() when
+no longer needed.
+
+PINGING
+-------
+You can initiate pings between the server and clients, to as to obtain
+data from them about the speed of the link
+
+int grapple_client_ping(grapple_client client)
+
+This initiates a ping to the server. When a reply is received, a message
+is sent to the clients message queue
+
+double grapple_client_ping_get(grapple_client client,grapple_user serverid)
+
+If you need to get the last ping data, for any user, you can use this function.
+
+---
+
+The server can also ping clients
+
+int grapple_server_ping(grapple_server server,grapple_user serverid)
+
+This will ping a client from the server, exactly as the client side does
+
+double grapple_server_ping_get(grapple_server server,grapple_user clientid)
+
+This will return the requested clients ping data
+
+int grapple_server_autoping(grapple_server server,double frequency)
+
+This will cause the server to ping all connected clients, and keep on pinging
+them at regular intervals. Messages will be sent to the servers message queue
+for each reply.
+
+---------------------------------------------------------------------------
+SHORTCUTS
+
+If, as is likely, each process only runs one server and/or one client, then
+you can send 0 to for the client or server values, as if 0 is sent, it will
+use the initial (and thus only) value that it has.
+
+Confirming Receipt of Messages
+------------------------------
+It is possible to have Grapple inform you when a message has been successfully
+delivered to all recipients. With your grapple_server_send or 
+grapple_client_send function, use the flag GRAPPLE_CONFIRM. This function will
+then return a message ID. This message ID will be the content of a later
+GRAPPLE_MSG_CONFIRM_RECEIVED message.
+
+If after 10 seconds there has been no confirmation from some or all of
+the clients, the message times out, and a message GRAPPLE_MSG_CONFIRM_TIMEOUT
+is sent back, containing a list of each user that did not receive the message.
+
+Adding this flag forces the GRAPPLE_RELIABLE flag to be true for this
+message, as without a reliable message, this flag is useless.
+
+---------------------------------------------------------------------------
+
+EXTRA INFORMATION
+
+For a full example of how Grapple works, you can look at test/test.c which
+is a simple match-the-letters game written using Grapple.

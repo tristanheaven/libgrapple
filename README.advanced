@@ -1,0 +1,278 @@
+Advanced features of Grapple
+
+This file contains some of the more obscure, less needed, yet more powerful
+features of Grapple. Rather than clutter up the main README with stuff
+most people will never need, they are here.
+
+PACKET ORDERING IN UDP
+----------------------
+By default, a UDP connection processes packets in the order they are
+transmitted, ensuring data ordering is correct.
+
+In a situation where the order of data is unimportant, then UDP  sockets
+can be told to process data in the order it is received. This will have
+the effect of reducing latency at the cost of leaving the order of 
+processing to be unsure.
+
+grapple_client_sequential_set(grapple_client client,int value)
+
+This will set sequential processing to on or off depending on the
+value passed, either GRAPPLE_SEQUENTIAL or GRAPPLE_NONSEQUENTIAL
+
+grapple_client_sequential_get(grapple_client client)
+
+This will return the value currently set for sequential processing. 1 for
+on and 0 for off.
+
+The server has equivalent functions
+
+grapple_server_sequential_set(grapple_server server,int value)
+grapple_server_sequential_get(grapple_server server)
+
+IMPORTANT NOTE:
+Setting the sequential mode of a connection ONLY affects the receiving
+end of the connection. If you want both ends to be sequential or not,
+then you must set such a request at each end.
+
+SIMPLE SERVER MODE
+------------------
+Sometimes you may just want to write an application using
+grapple, where the clients are not allowed to know each others
+identity.
+
+grapple_server_notified_set(grapple_sever server,int state)
+
+will stop the server notifying the clients of each others existance.
+
+This will NOT prevent things like notifications of group joins or pretty much
+anything else notifying clients of other clients existance, but it simply
+prevents the notify messages being sent for connect/disconnect events.
+
+The state can be
+GRAPPLE_NOTIFY_STATE_ON
+GRAPPLE_NOTIFY_STATE_OFF
+
+The default state is GRAPPLE_NOTIFY_STATE_ON
+
+SIMPLE CLIENT MODE
+------------------
+Sometimes you may just want to write a simple client server application using
+grapple, that is not required to know all of the other users who are
+connected. Using the function
+
+grapple_client_notified_set(grapple_client client,int state)
+
+will allow you to save the bandwidth and processing overhead of sending 
+the client list
+
+The state can be
+GRAPPLE_NOTIFY_STATE_ON
+GRAPPLE_NOTIFY_STATE_OFF
+
+The default state is GRAPPLE_NOTIFY_STATE_ON
+
+Name Policies
+-------------
+It is possible to restrict the use of names based on a policy. 
+
+  grapple_server_namepolicy_set(grapple_server,grapple_namepolicy)
+
+  The namepolicy should be set to one of either
+
+     GRAPPLE_NAMEPOLICY_NONE
+       There are no rules on which names are used, or even IF names are used
+       This is the default state.
+
+     GRAPPLE_NAMEPOLICY_REQUIRED
+       A name is required but there is no restriction on what the name is
+
+     GRAPPLE_NAMEPOLICY_UNIQUE
+       A name is required and it must be unique
+
+
+Protection Key Policies
+-----------------------
+It is possible to add a level of protection into Grapple products, ensuring
+that each user connecting to a server has a unique key.
+
+  grapple_server_protectionkeypolicy_set(grapple_server,
+                                         grapple_protectionkeypolicy)
+
+  The protectionkeypolicy should be set to one of either
+
+     GRAPPLE_PROTECTIONKEYPOLICY_NONE
+       There are no requirements for having a key.
+       This is the default state.
+
+     GRAPPLE_PROTECTIONKEYPOLICY_UNIQUE
+       A key is required and it must be unique
+
+
+The client, before connecting, must set a key, if the policy requires one.
+This key must be set before grapple_client_start() is called, using.
+
+  int grapple_client_protectionkey_set(grapple_client,const char *key)
+
+
+If the key is not unique, then a connection failed message will be returned,
+with the reason of GRAPPLE_NOCONN_PROTECTIONKEY_NOT_UNIQUE
+
+
+Advanced Password Processing
+----------------------------
+If a simple password for the game is not enough, then grapple has the
+facility to use complex password processing routines.
+
+You can set a callback to use for the password processor, which will
+hand the name and password to your callback function. From this function
+simply return 1 for success, 0 for failure.
+
+int grapple_server_passwordhandler_set(grapple_server server,
+				       grapple_password_callback callback,
+				       void *context);
+
+The callback needs to be of the form
+int callback(const char *login,const char *password, void *context)
+
+The context passed into the callback is the same as the context passed into
+the set function.
+
+WARNING: You should not make this callback too complex, as it blocks the
+main data processing thread of Grapple until it is complete. 
+
+Advanced User Handling
+----------------------
+If you need advanced processing to determind if a user is allowed to connect,
+Grapple allows this using a callback which is called when a user has passed
+all other connection criteria.
+
+This will allow things like banning users by IP address, or other such
+tests you may need to make. The callback should return 0 to block the
+connection, or 1 to allow the connection.
+
+int grapple_server_connectionhandler_set(grapple_server server,
+	                                 grapple_connection_callback callback,
+                                         void *context);
+
+The callback needs to be of the form
+int callback(grapple_user userid, void *context,void *data)
+
+The context passed into the callback is the same as the context passed into
+the set function.
+
+The userid that is returned is the user ID that can be used to use grapple
+functions to query information about a user.
+
+WARNING: You should not make this callback too complex, as it blocks the
+main data processing thread of Grapple until it is complete. 
+
+Server Failover
+---------------
+If a host disconnects, then that is the end of the session, unless you
+have server failover running. This system allows other hosts to take over
+the task of being the server.
+
+Some hosts cannot be the server, due to firewalls or other restrictions,
+so server failover does 'the best it can'.
+
+To turn on server failover simply use
+
+grapple_server_failover_set(grapple_server server, int value)
+
+  where value is 1 for on and 0 for off
+
+
+Grapple will then sort itself out behind the scenes. The host will be notified
+of its new status with the message
+
+GRAPPLE_MSG_YOU_ARE_HOST
+
+The other clients are never informed, as they do not need to know.
+
+The server failover state can be obtained with the function
+
+grapple_server_failover_get(grapple_server server)
+
+which will return 0 or 1, depending on the failover state
+
+NOTE: This system ONLY moves the control system of the multiplayer layer,
+it does NOT handle all the things your game will need to do to take over the
+hosting of the system. All messages will come to the new host, all player to
+player messages will route through the new host, but there is no way for the
+hew host to know how to restructure the internal GAME data.
+
+IMPORTANT:
+When the game is shutting down intentionally, you must turn off failover,
+or clients will failover to the next server and so on.
+
+Encryption
+----------
+
+Grapple supports SSL encryption over TCP connection
+
+To enable encryption, the server must initialise this somewhere
+between grapple_server_protocol_set and grapple_server_start
+
+The function for enabling encryption is
+
+grapple_server_encryption_enable(grapple_server,
+                                 const char *private_key,
+                                 const char *private_key_password,
+                                 const char *public_key)
+
+From this point on, all communication to and from the server will be
+encryptyed. You cannot turn off encryption once it is turned on. The server
+will not understand, and will drop connections from, any connection where
+the client is not encrypted.
+
+The values passed into the function are optional public and private key
+strings. These are ascii keys.
+These may be ignored and NULL be passed in, and the server will generate a
+single-use key for this one instance. If you pass in a set of keys, this
+can be used to tie in to the client side which may also define a
+certificate authority, to verify the authenticity of the public key that
+is sent to it.
+The private_key_password is a password that may have been set into the private
+key. If the key has no password, or you are generating a single use key,
+you should set this to NULL.
+
+
+From the client side, a client connecting to an encrypted server must
+enable encryption somewhere between grapple_client_protocol_set and 
+grapple_client_start
+
+The function for enabling encryption is
+
+grapple_client_encryption_enable(grapple_client,const char *cert_auth)
+
+The cert_auth perameter is optional, and should only be used if the client
+wishes to verify that the server is the correct server, and that the key
+passed during the encryption startup is valid.
+The cert_auth is the ascii public key of the certificate signer used to sign
+the servers keys. If cert_auth is NULL, then no check for authenticity of
+the servers key will be made, but the data stream will still be encrypted.
+
+If the server is initialised with NULL keys, that is, it generates its key
+itself, then passing a cert_auth into the client will always cause the 
+connection to fail, as the key passed will not be valid for the cert_auth.
+
+Once encryption is enabled, Grapple is used in the same ways as without
+encryption. The only change is the underlying data stream.
+
+NOTE: Encryption can ONLY be used with TCP as the protocol, UDP at this time
+cannot be used in encrypted mode
+
+----------------------------
+VARIOUS USEFUL TOOLS
+
+In the making of Grapple, some internal tools have been asked to be made 
+part of the interface. These are as follows
+
+const char **grapple_local_addresses_get()
+
+This will return a NULL terminated array of char *'s containing the local
+IP addresses of the machine.
+
+This array is statically allocated memory and should not be free'd or written
+to. It will not change 
+

@@ -1,0 +1,124 @@
+If you find any bugs or have any updates, please submit them to
+
+grapple@linuxgamepublishing.com
+
+Updates since version 0.9.7
+
+Fixed an error when SSL is not available
+Corrected the error setting of many functions
+Corrected the behaviour of enumerating functions
+Fixed issues getting lobby game by name
+Finished porting work to win32 (mingw32 and visual studio), and MacOSX
+Fixed error querying NAT type
+Fixed a STUN race condition
+Fixed a timeout on slow but active UDP sockets
+Fixed local resolution bug
+Worked around a bug in IP MASQUERADE which prevents firewall bypass
+Allowed overriding of player name in the lobby
+Fixed a crash when connecting via vertain types of half cone NAT
+
+-------------------------------------------------------------------------------
+
+Updates since version 0.9.6
+
+Finally fixed the last part of the broken encryption system for TCP
+Added encryption options for the lobby
+Added encryption key inspection
+Added connection callback to lobby
+Updated clients and servers to be able to use multiple callback dispatchers
+
+-------------------------------------------------------------------------------
+
+Updates since version 0.9.5
+
+Added new grapple synchronised variables functionality
+Added Grapple Description binary blob into grapple and the lobby
+Improved performance of lobby room mutex locking
+Improved performance of internal data locking in grapple server and client
+Fixed a bug where games were reported more than once to the lobby clients
+Fixed a race condition where lobby servers could be informed of a users room
+  before a users presence
+Tidyup of server code to prevent malicious overruns from clients
+Addition of protection keys to server and lobby server
+Fixing client UDP connection bug
+Fixing UDP resend bugs
+Fixing UDP packet splitting via limited relays
+Optimised UDP packet splitting to cope with larger packets
+Fixing select statements left in the win32 connection routines
+Further work on the encryption layer - One remaining known bug, see BOUNTY
+
+-------------------------------------------------------------------------------
+
+Updates since version 0.9.4
+
+Fixed issues compiling without encryption
+Fixed crash where asking for default server before servers created
+Fixed a deadlock in lobbies
+Added functionality for role reversal when connecting via a STUN connection
+Implimented TURN functionality for NAT traversal
+Reliable UDP will now split packets that are too large to send in one go,
+   capable in theory of handling packets up to 2GB, but it isnt advised to use
+   such large packets.
+Expanded grapple_notify to include server no-notify mode
+Added connection callback to allow postprocessing of connections
+Finished encrypted connection protocol using self-generated keys.
+Fixed broken encryption CA cleanup on invalid CA result
+Fixed incorrect size of FIONREAD parameter
+
+-------------------------------------------------------------------------------
+
+Updates since version 0.9.3
+
+Updates for Win32 compatability
+Further work on encrypted network layer
+Bugfixes for 64 bit
+
+-------------------------------------------------------------------------------
+
+Updates since version 0.9.2
+
+Fully implimented STUN client/server as part of the grapple Nattrav package
+Added small changes for compilation on Mac platform
+Added small changes for compilation on Win32 platform (will not yet compile)
+
+-------------------------------------------------------------------------------
+
+Updates since version 0.9.1
+
+Implimented speedup of internal local data pipeline
+Added custom password handler callback functionality
+Fixed a lobby password fail hang
+Added interaction level for lobby hosts (GRAPPLE_LOBBYMSG_USER_MSG)
+Added callback system for lobby server user messages
+Fixed a data transmission error for the lobby game creation with specific IP
+Added in dummy game server functionality for network masking
+Added in the facility for the server to limit the number of groups
+Added the functionality to allow groups to have passwords
+Incrimented internal protocol number due to changes in grapple groups protocol
+Fixed a bug where local callback events were not dispatched
+Fixed a lobby bug where connection hung forever
+Added lobby connection refused messages to be passed to the user
+Modified lobby room creation notification to always notify of room creation
+Added a name policy to, to require either nothing, names, or unique names
+Fixed a bug where users half way through connecting counted as connected
+When a user already has a name set, it will now be included in the connect msg
+Fixed a deadlock in room systems
+Changed the lobby to send all messages even if ingame - users choice to ignore
+Fixed a bug in game reporting from the lobby, current players was always 0
+Fixed a bug that made grapple not threadsafe
+Fixed a race condition in the callback dispatcher when the server is closing
+Changed some *internal* variable names to make the code more understandable
+Added the start of a basic STUN server system for Full Cone NAT traversal
+Completely reworked thread handling to reduce deadlocks and allow threads to
+  share mutexes for read operations for extra speed
+Fixed a number of memory leaks
+Fixed a race condition in confirmable messages
+Changed UDP client protocol to work through Half-Cone and symmetric NAT
+-------------------------------------------------------------------------------
+
+Updates since version 0.9
+
+Improved UDP layer to work through NAT in most situations
+Fixed server failover issues
+Incrimented internal protocol number due to changes in UDP protocol
+

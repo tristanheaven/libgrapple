@@ -1,0 +1,579 @@
+This document expands on the README document - you should read that first.
+-----------------------------------------------------------------------------
+
+The Grapple Lobby is a game finding system used in conjunction with the
+Grapple networking layer.
+
+The Grapple Lobby allows multiplayer games written with grapple to 
+have a single point of entry, allowing players to easily find other games
+online.
+
+Grapple Lobby features are:
+
+Simple interface, similar to Grapple
+Ability for users to easily find gaming partners
+Ability to create unlimited themed rooms for users
+Ability to monitor an unlimited number of games
+Automatic monitoring of games, no need to tell the server you are finished
+Simple integration into any grapple based game.
+
+-----------------------------------------------------------------------------
+
+All grapple lobby functionality is obtained from
+
+#include <grapple_lobby.h>
+
+The libraries required are the same as for Grapple.
+
+-----------------------------------------------------------------------------
+STARTING A LOBBY SERVER
+
+Starting a lobby server is very similar to starting a plain grapple server.
+
+grapple_lobby lobby;
+
+lobby=grapple_lobby_init("Testgames Lobby","1.0");
+grapple_lobby_ip_set(lobby,"dns.or.ip.address");       //Optional
+grapple_lobby_port_set(lobby,6543);
+grapple_lobby_start(lobby);
+
+As simple as that, your lobby is started.
+
+To close down your lobby when you are finished with it, use
+
+grapple_lobby_destroy(lobby);
+
+The details of these functions are:
+
+grapple_lobby grapple_lobby_init(const char *lobbyname,const char *version)
+
+  Initialise the lobby. This function returns the grapple_lobby value
+  that is used to refer to the lobby from here on.
+
+int grapple_lobby_ip_set(grapple_lobby,const char *)
+
+  Optionally set the IP address to listen on. If this is not set, then
+  all available addresses are listened to
+
+int grapple_lobby_port_set(grapple_lobby,int)
+
+  The port to listen at.
+
+int grapple_lobby_start(grapple_lobby)
+
+  Start the lobby. This will now start listening for connections from
+  lobby clients.
+
+int grapple_lobby_destroy(grapple_lobby)
+
+  Use this function to delete the lobby and everything connected to it, all
+  connected clients will be disconnected.
+
+-----------------------------------------------------------------------------
+STARTING A CLIENT
+
+Starting a lobby client is done as follows
+
+grapple_lobbyclient client;
+
+client=grapple_lobbyclient_init("Testgames Lobby","1.0");
+grapple_lobbyclient_address_set(client,"127.0.0.1");
+grapple_lobbyclient_port_set(client,6543);
+grapple_lobbyclient_name_set(client,"MyName");
+grapple_lobbyclient_start(client);
+
+And then when you are finished with it, use
+
+grapple_lobbyclient_destroy(client);
+
+
+The details of these functions are:
+
+grapple_lobbyclient grapple_lobbyclient_init(const char *lobbyname,
+                                             const char *lobbyversion);
+
+  This function initialises the lobby client. It is always the first
+  lobby client function you must call.
+
+int grapple_lobbyclient_address_set(grapple_lobbyclient client, 
+                                    const char *address);
+
+  Set the address to connect to, this is the host the server is on
+
+int grapple_lobbyclient_port_set(grapple_lobbyclient client,int port);
+
+  Set the portnumber to connect to
+
+int grapple_lobbyclient_name_set(grapple_lobbyclient client, const char *name);
+
+  Set the name you will connect to the lobby server using. This must be a
+  unique name, or the connection will fail
+
+int grapple_lobbyclient_start(grapple_lobbyclient client);
+
+  Start the client. The client can fail here if the name chosen is not unique
+
+int grapple_lobbyclient_destroy(grapple_lobbyclient client);
+
+  Destroy the client specified, do not reference the client again after this
+
+-----------------------------------------------------------------------------
+MESSAGES
+
+Messages may be read in two methods.
+
+MESSAGE PULLING
+---------------
+The pull method involves taking a message from the queue by calling the
+function
+
+grapple_lobbymessage *grapple_lobbyclient_message_pull(grapple_lobbyclient);
+
+This will return the oldest message in the queue, or NULL if none are
+waiting.
+ 
+For example:
+
+   grapple_lobbymessage *message;
+   message=grapple_lobbyclient_message_pull(client);
+   if (message)
+     {
+       switch (message->type)
+         {
+         case GRAPPLE_LOBBYMSG_ROOMLEAVE:
+           printf("%d left the room\n",message->ROOM.id);
+           ...
+         }
+     }
+
+
+MESSAGE TYPES (client)
+----------------------
+
+The different message types, their meanings, and parameters are below
+
+  GRAPPLE_LOBBYMSG_ROOMLEAVE
+
+    With this message, one value is included in the message structure ROOM
+
+    grapple_user userid
+
+    USERID is the server generated ID of the user who has left the room you are in
+
+  GRAPPLE_LOBBYMSG_ROOMENTER
+
+    With this message, one value is included in the message structure ROOM
+
+    grapple_user userid
+
+    USERID is the server generated ID of the user who has entered the room you 
+    are in
+
+  GRAPPLE_LOBBYMSG_ROOMCREATE
+
+    With this message, two values are included in the message structure ROOM
+
+    grapple_lobbyroomid roomid
+    char *name
+
+    ROOMID is the server generated ID of the room
+    NAME is the name of the room that has been created.
+
+  GRAPPLE_LOBBYMSG_ROOMDELETE
+
+    With this message, two values are included in the message structure ROOM
+
+    grapple_lobbyroomid roomid
+    char *name
+
+    ROOMID is the server generated ID of the room
+    NAME is the name of the room that has been deleted.
+
+  GRAPPLE_LOBBYMSG_CHAT
+
+    With this message, three values are included in the message structure CHAT
+
+    grapple_user id
+    char *message
+    int length
+
+    ID is the server generated ID of the user who has sent the message
+    MESSAGE is the body of the message
+    LENGTH is the length of the message (included so binary can be sent)
+
+  GRAPPLE_LOBBYMSG_DISCONNECTED
+
+    With this message, no values are included in the message structure
+
+    At this point you are disconnected from the server.
+
+  GRAPPLE_LOBBYMSG_NEWGAME
+
+    With this message, six values are included in the message structure GAME
+   
+    grapple_lobbygameid id;
+    char *name;
+    int maxusers;
+    int needpassword;
+    void *description;
+    int descriptionlen;
+
+    ID is the server generated ID of the game
+    NAME is the name of the game (its session name)
+    MAXUSERS is the number of users who may connect to the game
+    NEEDPASSWORD is 0 or 1 depending if a password is required to enter
+    DESCRIPTION is the new game description (binary data possible)
+    DESCRIPTIONLEN is the size of the description
+
+
+  GRAPPLE_LOBBYMSG_DELETEGAME
+
+    With this message, one value is included in the message structure GAME
+   
+    grapple_gameid id;
+
+    ID is the server generated ID of the game
+
+  GRAPPLE_LOBBYMSG_GAME_MAXUSERS
+
+    With this message, two values are included in the message structure GAME
+   
+    grapple_gameid id;
+    int maxusers;
+
+    ID is the server generated ID of the game
+    MAXUSERS is the maximum number of users who may now connect to the game
+
+  GRAPPLE_LOBBYMSG_GAME_USERS
+
+    With this message, two values are included in the message structure GAME
+   
+    grapple_gameid id;
+    int currentusers;
+
+    ID is the server generated ID of the game
+    CURRENTUSERS is the number of users currently connected to the game
+
+  GRAPPLE_LOBBYMSG_GAME_CLOSED
+
+    With this message, two values are included in the message structure GAME
+   
+    grapple_gameid id;
+    int closed;
+
+    ID is the server generated ID of the game
+    CLOSED is the state of the game whether it is accepting new connections
+           Values for closed are either:
+              GRAPPLE_SERVER_OPEN
+              GRAPPLE_SERVER_CLOSED
+
+  GRAPPLE_LOBBYMSG_GAME_DESCRIPTION
+
+    With this message, 3 values are included in the message structure GAME
+   
+    int id
+    void *description;
+    int descriptionlen;
+
+    ID is the ID of the affected game
+    DESCRIPTION is the new game description (binary data possible)
+    DESCRIPTIONLEN is the size of the description
+
+  GRAPPLE_LOBBYMSG_USER_MSG
+
+    With this message, 2 values are included in the message structure USERMSG
+   
+    void *data;
+    int length;
+
+    DATA is the data passed from the server to the client
+    LENGTH is the size of the data
+
+
+
+
+When you have finished with a message, it must be deleted with
+
+int grapple_lobbymessage_dispose(grapple_lobbymessage *message)
+
+to prevent memory leaks
+
+MESSAGE TYPES (server)
+----------------------
+
+The different message types, their meanings, and parameters are below
+
+  GRAPPLE_LOBBYMSG_DISCONNECTED
+
+    With this message, one value is included in the message structure USER
+
+    grapple_lobbyuserid id;
+
+    ID is the user who disconnected
+
+    At this point this user has been disconnected
+
+  GRAPPLE_LOBBYMSG_NEWGAME
+
+    With this message, four values are included in the message structure GAME
+   
+    grapple_lobbygameid id;
+    char *name;
+    int maxusers;
+    int needpassword;
+
+    ID is the server generated ID of the game
+    NAME is the name of the game (its session name)
+    MAXUSERS is the number of users who may connect to the game
+    NEEDPASSWORD is 0 or 1 depending if a password is required to enter
+
+  GRAPPLE_LOBBYMSG_DELETEGAME
+
+    With this message, one value is included in the message structure GAME
+   
+    grapple_gameid id;
+
+    ID is the server generated ID of the game
+
+  GRAPPLE_LOBBYMSG_USER_MSG
+
+    With this message, 3 values are included in the message structure USERMSG
+ 
+    grapple_user id;  
+    void *data;
+    int length;
+
+    ID is the user who sent the message
+    DATA is the data passed from the client to the server
+    LENGTH is the size of the data
+
+MESSAGE PUSHING
+---------------
+The push method involves the message being injected into your program as soon
+as it is received, using a callback system. You supply a function to be
+called when a specific message is received, and that function is run when
+a message is received for the user
+
+To set up callbacks, use the following
+
+int grapple_lobbyclient_callback_set(grapple_lobbyclient client,
+                                     grapple_lobbymessagetype type,
+                                     grapple_lobbycallback callback,
+                                     void *context)
+
+The type is the type of message you wish the callback to trigger on.
+The callback is the function to call.
+The context is a set of data to pass to the callback function.
+
+The callback function has the format
+
+int callback (grapple_lobbymessage *message,void *context)
+
+
+You can also set ALL callbacks at once using
+
+int grapple_lobbyclient_callback_setall(grapple_lobbyclient client,
+                                        grapple_lobbycallback callback,
+                                        void *context)
+
+And a callback may be removed with
+
+int grapple_lobbyclient_callback_unset(grapple_lobbyclient client,
+                                       grapple_lobbymessagetype type)
+
+-----------------------------------------------------------------------------
+USERS
+
+Users are the people connected to the Grapple Lobby
+
+There are various functions described below which allow you to get lists
+of players. One important thing is, once you have that list, what do you
+do with it?
+
+grapple_lobbyclient_name_get(grapple_lobbyclient lobbyclient,
+		             grapple_user userid)
+
+This gets the name of the user from their ID. The value returned is allocated
+memory and must be free()d once finished with.
+
+
+-----------------------------------------------------------------------------
+ROOMS
+
+Rooms are, as they sound, places for users to go to chat and find games.
+Rooms can be created, entered, and left. A room cannot be destroyed. A room
+is automatically destroyed when the last person leaves.
+
+When a chat message is sent, only those that are in the room will see it.
+
+Games may be created in the room (see later).
+
+The functions for rooms are as follows
+
+grapple_lobbyroomid grapple_lobbyclient_currentroomid_get(grapple_lobbyclient client)
+
+returns the ID of the room that the client is currently in.
+
+
+int grapple_lobbyclient_room_create(grapple_lobbyclient client,
+                                    const char *name)
+
+  Create a room of name NAME. This name is forced to be unique, if you try
+  and create a room that already exists, you are simply moved into the existing
+  room. When creating a room, the user is placed into the room, as rooms 
+  auto-destruct if nobody is in them.
+
+int grapple_lobbyclient_room_enter(grapple_lobbyclient client,
+                                   grapple_lobbyroomid roomid);
+
+  Enter the room of id ROOMID
+
+int grapple_lobbyclient_room_leave(grapple_lobbyclient client);
+
+  Leave the room and go back to the main room
+
+int grapple_lobbyclient_chat(grapple_lobbyclient client,const char *message)
+
+  Send a chat message to the other room users
+
+grapple_lobbyroomid *grapple_lobbyclient_roomlist_get(grapple_lobbyclient)
+
+  Retrieve a list of room IDs that are available. This is an array of
+  grapple_lobbyroomid values. It is null terminated. This list is
+  allocated memory and must be free()d
+
+char *grapple_lobbyclient_roomname_get(grapple_lobbyclient client,
+	                               grapple_lobbyroomid roomid)
+
+  Find the name of the roomid requested. This name is allocated
+  memory and must be free()d
+
+grapple_user *grapple_lobbyclient_roomusers_get(grapple_lobbyclient client,
+						grapple_lobbyroomid roomid);
+
+  Returns a null-terminated array of grapple_user values. This array is
+  allocated memory and must be free()d
+
+-----------------------------------------------------------------------------
+GAMES
+
+Games is what the lobby is all about. The lobby is integrated into grapple
+to allow very easy game-starting and joining
+
+grapple_lobbygameid grapple_lobbyclient_game_register(grapple_lobbyclient client,
+ 					              grapple_server server);
+
+  This function is the function a user will use when adding a new game into
+  the lobby. This will add a game to the room that the user is in. Only
+  users in that room can see the game in their game lists (see later)
+
+  The grapple_server passed in must be a grapple_server already running a 
+  started grapple-based game. The lobby will extract information about the 
+  server and integrate it into its game lists. It is as easy as that. No need 
+  to tell the lobby all the addresses and portnumbers and protocols, its all 
+  done for you.
+
+  NOTES: 
+
+    Only one game may be registered by a user at any one time.
+
+    Once a game has been registered, it is the job of the program to create a
+    client if the owner of the game also wishes to play.
+
+    As soon as the game is registered, the user will receive no more grapple
+    messages while the game is running.
+
+    When the game stops running, the lobby automatically detects this and 
+    resumes sending lobby messages to the user.
+
+int grapple_lobbyclient_game_join(grapple_lobbyclient client,
+ 		                  grapple_lobbygameid gameid,
+                                  grapple_client gameclient)
+
+
+  To join a game, simply create a grapple_client using the standard
+  grapple_client_init command and then pass that gameclient into the above 
+  function for processing. You will be automatically joined (if possible) to 
+  the gameid that has been selected
+
+  NOTES: 
+
+    Only one game may be joined by a user at any one time.
+
+    As soon as the game is joined, the user will receive no more grapple
+    messages while the game is running.
+
+    When the user leaves the game, the lobby automatically detects this and 
+    resumes sending lobby messages to the user.
+
+grapple_lobbygameid *grapple_lobbyclient_gamelist_get(grapple_lobbyclient client, 
+                                                      grapple_lobbyroomid roomid)
+
+  This function returns a null-terminated array of game IDs representing
+  all games in the room specified. This is allocated memory and must be
+  free()d
+
+
+grapple_lobbygame *grapple_lobbyclient_game_get(grapple_lobbyclient client,
+                                                grapple_lobbygameid gameid)
+
+
+  This function returns current information about the game requested. This
+  is returned in a grapple_lobbygame structure
+
+
+  typedef struct
+  {
+    grapple_lobbygameid gameid;
+    char *name;
+    int currentusers;
+    int maxusers;
+    int needpassword;
+    grapple_lobbyroomid room;
+    int closed;
+  } grapple_lobbygame;
+
+
+  This structure should be fairly self explanatory. Once you have finished
+  with this structure, dispose of it using
+
+int grapple_lobbyclient_game_dispose(grapple_lobbygame *gamedata)
+
+  which will tidy up all associated memory
+
+From the server
+---------------
+grapple_lobbygameid *grapple_lobby_gamelist_get(grapple_lobby lobby
+                                                grapple_lobbyroomid roomid)
+
+  The server may request a gamelist in exactly the same way as the client.
+  This function returns a null-terminated array of game IDs representing
+  all games in the room specified. This is allocated memory and must be
+  free()d
+
+  If roomid is 0, then all games are returned.
+
+-----------------------------------------------------------------------------
+ADVANCED
+
+Advanced Password Processing
+----------------------------
+If a simple password for the game is not enough, then grapple has the
+facility to use complex password processing routines.
+
+You can set a callback to use for the password processor, which will
+hand the name and password to your callback function. From this function
+simply return 1 for success, 0 for failure.
+
+int grapple_server_passwordhandler_set(grapple_lobby lobby,
+				       grapple_password_callback callback,
+				       void *context);
+
+The callback needs to be of the form
+int callback(const char *login,const char *password, void *context)
+
+The context passed into the callback is the same as the context passed into
+the set function.
+
+WARNING: You should not make this callback too complex, as it blocks the
+main data processing thread of the Grapple Lobby until it is complete. 
