@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/src
+AM_CPPFLAGS = -I$(top_srcdir)/src
 LDADD = $(top_builddir)/src/libgrapple.la
 
 noinst_PROGRAMS = unittest

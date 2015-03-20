@@ -1,9 +1,10 @@
-dnl Process this file with autoconf to produce a configure script.
-AC_INIT(README)
+dnl Setup for autoconf
+AC_INIT([libgrapple], [0.9.8])
+AC_CONFIG_SRCDIR([src/grapple.h])
+AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
 dnl Set various version strings - taken gratefully from the GTk sources
-
 # Making releases:
 #   MICRO_VERSION += 1;
 #   INTERFACE_AGE += 1;
@@ -11,20 +12,11 @@ dnl Set various version strings - taken gratefully from the GTk sources
 # if any functions have been added, set INTERFACE_AGE to 0.
 # if backwards compatibility has been broken,
 # set BINARY_AGE and INTERFACE_AGE to 0.
-
 MAJOR_VERSION=0
 MINOR_VERSION=9
 MICRO_VERSION=8
 INTERFACE_AGE=1
 BINARY_AGE=6
-VERSION=$MAJOR_VERSION.$MINOR_VERSION.$MICRO_VERSION
-
-AC_SUBST(MAJOR_VERSION)
-AC_SUBST(MINOR_VERSION)
-AC_SUBST(MICRO_VERSION)
-AC_SUBST(INTERFACE_AGE)
-AC_SUBST(BINARY_AGE)
-AC_SUBST(VERSION)
 
 dnl libtool versioning
 LT_RELEASE=$MAJOR_VERSION.$MINOR_VERSION
@@ -32,41 +24,38 @@ LT_CURRENT=`expr $MICRO_VERSION - $INTERFACE_AGE`
 LT_REVISION=$INTERFACE_AGE
 LT_AGE=`expr $BINARY_AGE - $INTERFACE_AGE`
 
-AC_SUBST(LT_RELEASE)
-AC_SUBST(LT_CURRENT)
-AC_SUBST(LT_REVISION)
-AC_SUBST(LT_AGE)
-
-dnl Detect the canonical host and target build environment
-AC_CANONICAL_SYSTEM
+AC_SUBST([LT_RELEASE])
+AC_SUBST([LT_CURRENT])
+AC_SUBST([LT_REVISION])
+AC_SUBST([LT_AGE])
 
 dnl Setup for automake
-AM_INIT_AUTOMAKE(libgrapple, $VERSION)
+AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_SILENT_RULES([yes])
 
 dnl Check for tools
-AC_PROG_MAKE_SET
 AC_PROG_CC
-AM_PROG_LIBTOOL
+LT_INIT
 AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG
 
 dnl Check for pthreads
-ACX_PTHREAD(have_pthreads=yes, have_pthreads=no)
+AX_PTHREAD([have_pthreads=yes], [have_pthreads=no])
 
 dnl Check for SSL
-AC_ARG_ENABLE([openssl], AC_HELP_STRING([--disable-openssl], [do not compile with OpenSSL support]), [want_ssl=no], [want_ssl=yes])
-if test "$want_ssl" = "yes"; then
+AC_ARG_ENABLE([openssl], AS_HELP_STRING([--disable-openssl], [do not compile with OpenSSL support]))
+if test "$enable_openssl" != "no"; then
 	PKG_CHECK_MODULES([OPENSSL], [openssl])
 	CFLAGS="$CFLAGS $OPENSSL_CFLAGS -DSOCK_SSL"
 	LIBS="$LIBS $OPENSSL_LIBS"
 fi
 
-if [[ "x$have_pthreads" = "xyes" ]]; then
-  LIBS="$PTHREAD_LIBS $LIBS"
-  CFLAGS="$CFLAGS $PTHREAD_CFLAGS -DHAVE_PTHREAD_H"
-  CC="$PTHREAD_CC"
+if test "$have_pthreads" = "yes" ; then
+	LIBS="$PTHREAD_LIBS $LIBS"
+	CFLAGS="$CFLAGS $PTHREAD_CFLAGS -DHAVE_PTHREAD_H"
+	CC="$PTHREAD_CC"
 else
-  AC_MSG_ERROR([cannot find pthreads])
+	AC_MSG_ERROR([cannot find pthreads])
 fi
 
 AC_CHECK_HEADER([errno.h], CFLAGS="$CFLAGS -DHAVE_ERRNO_H",)
@@ -126,14 +115,7 @@ AC_CHECK_HEADER([stropts.h], CFLAGS="$CFLAGS -DHAVE_STROPTS_H",)
 AC_CHECK_FUNCS(inet_ntop inet_pton sigaction gettimeofday)
 
 dnl Finally create all the generated files
-AC_OUTPUT([
-  Makefile
-  src/Makefile
-  test/Makefile
-])
-
-
-
-
-
-
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([test/Makefile])
+AC_OUTPUT
