@@ -37,6 +37,9 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 #include "grapple_server_thread.h"
 #include "grapple_server_internal.h"
@@ -53,9 +56,6 @@
 #include "grapple_callback_internal.h"
 #include "grapple_callback_dispatcher.h"
 #include "grapple_variable.h"
-
-
-extern int strcasecmp(const char *,const char *);
 
 int user_set_delete(internal_server_data *server,
 		    grapple_connection *target)

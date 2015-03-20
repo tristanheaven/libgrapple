@@ -110,6 +110,8 @@ AC_CHECK_HEADER([limits.h], CFLAGS="$CFLAGS -DHAVE_LIMITS_H",)
 
 AC_CHECK_HEADER([fcntl.h], CFLAGS="$CFLAGS -DHAVE_FCNTL_H",)
 
+AC_CHECK_HEADER([strings.h], CFLAGS="$CFLAGS -DHAVE_STRINGS_H",)
+
 AC_CHECK_HEADER([stropts.h], CFLAGS="$CFLAGS -DHAVE_STROPTS_H",)
 
 AC_CHECK_FUNCS(inet_ntop inet_pton sigaction gettimeofday)
