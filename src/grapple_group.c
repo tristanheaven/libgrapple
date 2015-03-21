@@ -26,19 +26,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_CRYPT_H
+#include <crypt.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #undef _XOPEN_SOURCE
-
-#include "ufc-crypt/crypt.h"
 
 #include "grapple_connection.h"
 #include "grapple_error_internal.h"
 #include "grapple_group.h"
 #include "grapple_group_internal.h"
 #include "grapple_structs.h"
-
 
 char *group_crypt(grapple_user group,const char *password)
 {
@@ -54,7 +54,7 @@ char *group_crypt(grapple_user group,const char *password)
   salt[0]='a'+(group%26);
   salt[1]='a'+((group>>1)%26);
   salt[2]=0;
-  cpassword=ufc_crypt(password,salt);
+  cpassword=crypt(password,salt);
 
   strncpy(buf,cpassword,20);
   buf[20]=0;
@@ -76,12 +76,12 @@ char *group_crypt_twice(grapple_user group,const char *password)
   salt[0]='a'+(group%26);
   salt[1]='a'+((group>>1)%26);
   salt[2]=0;
-  cpassword=ufc_crypt(password,salt);
+  cpassword=crypt(password,salt);
 
   strncpy(buf,cpassword,20);
   buf[20]=0;
 
-  cpassword=ufc_crypt(buf,salt);
+  cpassword=crypt(buf,salt);
 
   strncpy(buf,cpassword,20);
   buf[20]=0;

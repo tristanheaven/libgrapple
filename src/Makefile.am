@@ -31,9 +31,7 @@ libgrapple_la_SOURCES = \
     grapple_tools.c \
     grapple_variable.c \
     socket.c \
-    tools.c \
-    ufc-crypt/crypt.c \
-    ufc-crypt/crypt_util.c
+    tools.c
 
 libgrappleincludedir = $(includedir)/grapple
 libgrappleinclude_HEADERS = \
@@ -85,13 +83,10 @@ noinst_HEADERS = \
     grapple_variable.h \
     prototypes.h \
     socket.h \
-    tools.h \
-    ufc-crypt/crypt.h \
-    ufc-crypt/crypt_util.h
-
+    tools.h
 
 libgrapple_la_LDFLAGS = \
     -no-undefined           \
     -release $(LT_RELEASE)  \
     -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
-	-export-symbols-regex ^grapple_
+    -export-symbols-regex ^grapple_

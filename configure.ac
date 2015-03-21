@@ -23,7 +23,6 @@ LT_RELEASE=$MAJOR_VERSION.$MINOR_VERSION
 LT_CURRENT=`expr $MICRO_VERSION - $INTERFACE_AGE`
 LT_REVISION=$INTERFACE_AGE
 LT_AGE=`expr $BINARY_AGE - $INTERFACE_AGE`
-
 AC_SUBST([LT_RELEASE])
 AC_SUBST([LT_CURRENT])
 AC_SUBST([LT_REVISION])
@@ -60,33 +59,39 @@ if test "$enable_openssl" != "no"; then
 	LIBS="$LIBS $OPENSSL_LIBS"
 fi
 
-AC_CHECK_HEADER([errno.h], CFLAGS="$CFLAGS -DHAVE_ERRNO_H",)
+dnl Check whether an extra library is required for crypt()
+AC_SEARCH_LIBS([crypt], [crypt])
 
-AC_CHECK_HEADER([netinet/in.h], CFLAGS="$CFLAGS -DHAVE_NETINET_IN_H",)
+dnl Check for Windows Winsock library
+AC_CHECK_LIB([ws2_32], [main])
 
-AC_CHECK_HEADER([sys/types.h], CFLAGS="$CFLAGS -DHAVE_SYS_TYPES_H",)
-
-AC_CHECK_HEADER([sys/socket.h], CFLAGS="$CFLAGS -DHAVE_SYS_SOCKET_H",)
-
-AC_CHECK_HEADER([sys/select.h], CFLAGS="$CFLAGS -DHAVE_SYS_SELECT_H",)
-
-AC_CHECK_HEADER([sys/un.h], CFLAGS="$CFLAGS -DHAVE_SYS_UN_H",)
-
-AC_CHECK_HEADER([arpa/inet.h], CFLAGS="$CFLAGS -DHAVE_ARPA_INET_H",)
-
-AC_CHECK_HEADER([netdb.h], CFLAGS="$CFLAGS -DHAVE_NETDB_H",)
-
-AC_CHECK_HEADER([sys/ioctl.h], CFLAGS="$CFLAGS -DHAVE_SYS_IOCTL_H",)
-
-AC_CHECK_HEADER([winsock2.h], CFLAGS="$CFLAGS -DHAVE_WINSOCK2_H" LIBS="$LIBS -lws2_32",)
-
-AC_CHECK_HEADER([ws2tcpip.h], CFLAGS="$CFLAGS -DHAVE_WS2TCPIP_H",)
-
-AC_CHECK_HEADER([windows.h], CFLAGS="$CFLAGS -DHAVE_WINDOWS_H",)
-
-AC_CHECK_HEADER([unistd.h], CFLAGS="$CFLAGS -DHAVE_UNISTD_H",)
-
-AC_CHECK_HEADER([ifaddrs.h], CFLAGS="$CFLAGS -DHAVE_IFADDRS_H",)
+AC_CHECK_HEADERS_ONCE([
+	arpa/inet.h
+	crypt.h
+	errno.h
+	fcntl.h
+	ifaddrs.h
+	limits.h
+	linux/limits.h
+	netdb.h
+	netinet/in.h
+	signal.h
+	stdbool.h
+	stdint.h
+	strings.h
+	stropts.h
+	sys/file.h
+	sys/ioctl.h
+	sys/select.h
+	sys/socket.h
+	sys/time.h
+	sys/types.h
+	sys/un.h
+	unistd.h
+	windows.h
+	winsock2.h
+	ws2tcpip.h
+])
 
 AC_CHECK_HEADERS([net/if.h], CFLAGS="$CFLAGS -DHAVE_NET_IF_H", [], 
 [[#ifdef HAVE_SYS_TYPES_H
@@ -96,25 +101,6 @@ AC_CHECK_HEADERS([net/if.h], CFLAGS="$CFLAGS -DHAVE_NET_IF_H", [],
 #include <sys/socket.h>
 #endif
 ]])
-
-AC_CHECK_HEADER([signal.h], CFLAGS="$CFLAGS -DHAVE_SIGNAL_H",)
-
-AC_CHECK_HEADER([sys/time.h], CFLAGS="$CFLAGS -DHAVE_SYS_TIME_H",)
-
-AC_CHECK_HEADER([sys/file.h], CFLAGS="$CFLAGS -DHAVE_SYS_FILE_H",)
-
-AC_CHECK_HEADER([stdint.h], CFLAGS="$CFLAGS -DHAVE_STDINT_H",)
-
-AC_CHECK_HEADER([stdbool.h], CFLAGS="$CFLAGS -DHAVE_STDBOOL_H",)
-
-AC_CHECK_HEADER([linux/limits.h], CFLAGS="$CFLAGS -DHAVE_LINUX_LIMITS_H",)
-AC_CHECK_HEADER([limits.h], CFLAGS="$CFLAGS -DHAVE_LIMITS_H",)
-
-AC_CHECK_HEADER([fcntl.h], CFLAGS="$CFLAGS -DHAVE_FCNTL_H",)
-
-AC_CHECK_HEADER([strings.h], CFLAGS="$CFLAGS -DHAVE_STRINGS_H",)
-
-AC_CHECK_HEADER([stropts.h], CFLAGS="$CFLAGS -DHAVE_STROPTS_H",)
 
 AC_CHECK_FUNCS(inet_ntop inet_pton sigaction gettimeofday)
 
