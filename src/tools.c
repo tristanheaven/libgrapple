@@ -80,36 +80,8 @@ void timemark(const char *str)
   printf("%ld.%06ld %s",tv.tv_sec,tv.tv_usec,str);
 }
 
-#ifndef _MSC_VER
-inline 
-#endif
-int grapple_thread_errno()
-{
-#ifdef HAVE_ERRNO_H
-  return errno;
-#else
-#  warning No valid ERRNO system detected
-  return 0;
-#endif
-}
-
-#ifndef _MSC_VER
-inline 
-#endif
-int grapple_socket_errno()
-{
-#ifdef WIN32
-  return WSAGetLastError();
-# else
-# ifdef HAVE_ERRNO_H
-  return errno;
-#else
-#  warning No valid ERRNO system detected
-  return 0;
-# endif
-#endif
-}
-
+extern inline int grapple_thread_errno(void);
+extern inline int grapple_socket_errno(void);
 
 #ifndef HAVE_GETTIMEOFDAY
 #define FACTOR 0x19db1ded53e8000

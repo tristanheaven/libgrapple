@@ -23,6 +23,13 @@
 #ifndef TOOLS_H
 #define TOOLS_H
 
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
 #define S_MINUTE 60
 #define S_HOUR 3600
 #define S_DAY 86400
@@ -33,17 +40,37 @@
 extern void microsleep(int);
 extern void timemark(const char *);
 
+inline int grapple_thread_errno(void)
+{
+#ifdef HAVE_ERRNO_H
+  return errno;
+#else
+#  warning No valid ERRNO system detected
+  return 0;
+#endif
+}
+
+inline int grapple_socket_errno(void)
+{
 #ifdef WIN32
-extern int grapple_thread_errno(void);
-extern int grapple_socket_errno(void);
+  return WSAGetLastError();
+# else
+# ifdef HAVE_ERRNO_H
+  return errno;
+#else
+#  warning No valid ERRNO system detected
+  return 0;
+# endif
+#endif
+}
+
+#ifdef WIN32
 #define GRAPPLE_THREAD_ERRNO_IS_EAGAIN (grapple_thread_errno()==EAGAIN)
 #define GRAPPLE_SOCKET_ERRNO_IS_EINVAL (grapple_socket_errno()==WSAEINVAL)
 #define GRAPPLE_SOCKET_ERRNO_IS_EAGAIN (grapple_socket_errno()==WSAEWOULDBLOCK)
 #define GRAPPLE_SOCKET_ERRNO_IS_EMSGSIZE (grapple_socket_errno()==WSAEMSGSIZE)
 #define GRAPPLE_SOCKET_ERRNO_IS_EINPROGRESS (grapple_socket_errno()==WSAEINPROGRESS||grapple_socket_errno()==WSAEWOULDBLOCK)
 #else
-extern inline int grapple_thread_errno(void);
-extern inline int grapple_socket_errno(void);
 #define GRAPPLE_THREAD_ERRNO_IS_EAGAIN (grapple_thread_errno()==EAGAIN)
 #define GRAPPLE_SOCKET_ERRNO_IS_EINVAL (grapple_socket_errno()==EINVAL)
 #define GRAPPLE_SOCKET_ERRNO_IS_EAGAIN (grapple_socket_errno()==EAGAIN)
