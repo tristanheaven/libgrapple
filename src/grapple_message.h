@@ -158,7 +158,15 @@ typedef struct
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
   extern void grapple_message_dispose(grapple_message *);
+
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }

@@ -27,7 +27,15 @@
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
 extern const char **grapple_local_addresses_get(void);
+
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }

@@ -93,4 +93,5 @@ noinst_HEADERS = \
 libgrapple_la_LDFLAGS = \
     -no-undefined           \
     -release $(LT_RELEASE)  \
-    -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
+    -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
+	-export-symbols-regex ^grapple_

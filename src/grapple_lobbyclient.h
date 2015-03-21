@@ -32,6 +32,10 @@
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
 extern grapple_lobbyclient grapple_lobbyclient_init(const char *,const char *);
 extern int grapple_lobbyclient_address_set(grapple_lobbyclient, const char *);
 extern int grapple_lobbyclient_port_set(grapple_lobbyclient,int);
@@ -114,6 +118,9 @@ extern int grapple_lobbyclient_encryption_enable(grapple_lobbyclient,
 						 const char *,const char *,
 						 const char *,const char *);
 
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }

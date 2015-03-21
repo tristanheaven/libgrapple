@@ -48,6 +48,10 @@ extern "C" {
       GRAPPLE_PROTECTIONKEYPOLICY_UNIQUE
     } grapple_protectionkeypolicy;
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
   extern grapple_server grapple_server_init(const char *,const char *);
   extern int grapple_server_port_set(grapple_server,int);
   extern int grapple_server_port_get(grapple_server);
@@ -187,12 +191,15 @@ extern "C" {
 					 void *,size_t);
   extern int grapple_server_datavar_get(grapple_server,const char *,
 					void *,size_t *);
- 
+
   extern grapple_certificate *grapple_server_user_certificate_get(grapple_server,grapple_user);
 
   extern char *grapple_server_user_name_get(grapple_server,grapple_user);
   extern int grapple_server_dispatchers_set(grapple_server,int);
 
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }

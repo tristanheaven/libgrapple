@@ -39,6 +39,10 @@
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
 /////////////////////SERVER//////////////////////
 
 extern grapple_lobby grapple_lobby_init(const char *,const char *);
@@ -70,7 +74,7 @@ extern int grapple_lobby_callback_setall(grapple_lobby,
 					 void *);
 extern int grapple_lobby_callback_unset(grapple_lobby,
 					grapple_lobbymessagetype);
-  
+
 extern int grapple_lobby_message_send(grapple_lobby,grapple_user,
 				      const void *,size_t);
 
@@ -106,6 +110,10 @@ extern grapple_lobbymessage *grapple_lobby_message_pull(grapple_lobby);
 
 /////////////////////////OTHER//////////////////////
 extern int grapple_lobbymessage_dispose(grapple_lobbymessage *);
+
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }

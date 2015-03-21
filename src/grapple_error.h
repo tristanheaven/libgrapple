@@ -55,7 +55,15 @@ typedef enum
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
 extern const char *grapple_error_text(grapple_error);
+
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }

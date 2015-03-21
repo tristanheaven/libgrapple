@@ -16,7 +16,15 @@ typedef struct
   char *subject;
 } grapple_certificate;
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
 extern int grapple_certificate_dispose(grapple_certificate *);
+
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }

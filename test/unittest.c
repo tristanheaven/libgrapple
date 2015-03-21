@@ -5263,6 +5263,7 @@ static int encyption_connect_with_keys(grapple_protocol protocol,
 {
   grapple_server server;
   grapple_client client;
+  grapple_certificate *cert = NULL;
   int returnval=1;
   time_t start;
 
@@ -5282,14 +5283,16 @@ static int encyption_connect_with_keys(grapple_protocol protocol,
   if (server_ca)
     {
       grapple_user *users;
-      grapple_certificate *cert;
       users=grapple_server_userlist_get(server);
-      
+
       cert=grapple_server_user_certificate_get(server,users[0]);
     }
 
   grapple_client_destroy(client);
   grapple_server_destroy(server);
+
+  if (cert)
+    grapple_certificate_dispose(cert);
 
   return returnval;
 }

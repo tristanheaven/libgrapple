@@ -36,6 +36,10 @@
 extern "C" {
 #endif
 
+#if defined(__GNUC__)
+#pragma GCC visibility push(default)
+#endif
+
   extern grapple_client grapple_client_init(const char *,const char *);
   extern int grapple_client_address_set(grapple_client,const char *);
   extern int grapple_client_port_set(grapple_client,int);
@@ -134,6 +138,10 @@ extern "C" {
 
   extern grapple_protocol grapple_client_protocol_get(grapple_client);
   extern int grapple_client_dispatchers_set(grapple_client,int);
+
+#if defined(__GNUC__)
+#pragma GCC visibility pop
+#endif
 
 #ifdef __cplusplus
 }
