@@ -21,7 +21,7 @@
 */
 
 #ifndef GRAPPLE_LOBBYCLIENT_H
-#define GRAPPLE_LOBBY_H
+#define GRAPPLE_LOBBYCLIENT_H
 
 #include <sys/types.h>
 
