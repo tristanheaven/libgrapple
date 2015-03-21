@@ -1,9 +1,9 @@
-AM_CPPFLAGS = -I$(top_srcdir)/src
-LDADD = $(top_builddir)/src/libgrapple.la
-
 noinst_PROGRAMS = unittest
 
-unittest_SOURCES = unittest.c
-unittest_LDFLAGS = 
+unittest_SOURCES = unittest.c unittest.h
 
-noinst_HEADERS = test.h unittest.h
+unittest_CPPFLAGS = -I$(top_srcdir)/src
+
+unittest_LDADD = $(top_builddir)/src/libgrapple.la
+
+EXTRA_DIST = failovertest.c lobbytest.c test.c test.h udptest.c
