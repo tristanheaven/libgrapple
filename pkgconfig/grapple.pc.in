@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Grapple
+Description: Grapple network library
+Version: @VERSION@
+Requires.private: @GRAPPLE_PC_REQUIRES@
+Cflags: -I${includedir}/grapple
+Libs: -L${libdir} -lgrapple
+Libs.private: @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ @CRYPT_LIBS@

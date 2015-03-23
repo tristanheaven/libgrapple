@@ -41,6 +41,10 @@ LT_INIT
 AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG
 
+dnl Dependency list for grapple.pc
+GRAPPLE_PC_REQUIRES=""
+AC_SUBST([GRAPPLE_PC_REQUIRES])
+
 dnl Check for pthreads
 AX_PTHREAD([have_pthreads=yes], [have_pthreads=no])
 if test "$have_pthreads" = "yes"; then
@@ -57,10 +61,13 @@ if test "$enable_openssl" != "no"; then
 	PKG_CHECK_MODULES([OPENSSL], [openssl])
 	CFLAGS="$CFLAGS $OPENSSL_CFLAGS -DSOCK_SSL"
 	LIBS="$LIBS $OPENSSL_LIBS"
+	GRAPPLE_PC_REQUIRES="$GRAPPLE_PC_REQUIRES openssl"
 fi
 
 dnl Check whether an extra library is required for crypt()
-AC_SEARCH_LIBS([crypt], [crypt])
+CRYPT_LIBS=""
+AC_SEARCH_LIBS([crypt], [crypt], [CRYPT_LIBS="-lcrypt"])
+AC_SUBST([CRYPT_LIBS])
 
 dnl Check for Windows Winsock library
 AC_CHECK_LIB([ws2_32], [main])
@@ -106,6 +113,8 @@ AC_CHECK_FUNCS(inet_ntop inet_pton sigaction gettimeofday)
 
 dnl Finally create all the generated files
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([pkgconfig/grapple.pc])
+AC_CONFIG_FILES([pkgconfig/Makefile])
 AC_CONFIG_FILES([src/Makefile])
 AC_CONFIG_FILES([test/Makefile])
 AC_OUTPUT

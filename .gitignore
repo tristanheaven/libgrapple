@@ -1,3 +1,4 @@
+pkgconfig/grapple.pc
 test/unittest
 
 .deps/
