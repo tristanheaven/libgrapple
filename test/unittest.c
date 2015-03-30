@@ -5141,7 +5141,108 @@ static int tcp_client_sendconfirmgroupgroup(void)
   return client_sendconfirmgroupgroup(GRAPPLE_PROTOCOL_TCP);
 }
 
-static int client_sync_variable(grapple_protocol protocol)
+static int client_sync_int(grapple_protocol protocol)
+{
+  grapple_server server;
+  grapple_client client1,client2;
+  int returnval=0;
+  time_t start;
+
+  server=create_server(protocol);
+  client1=create_client(protocol,1);
+  client2=create_client(protocol,2);
+
+  start=time(NULL);
+
+  while (time(NULL) < start+5 && !grapple_client_connected(client1))
+    microsleep(10000);
+  while (time(NULL) < start+5 && !grapple_client_connected(client2))
+    microsleep(10000);
+
+  grapple_client_intvar_set(client1,"inttest",10);
+
+  //Now wait for the clients to receive the message
+  start=time(NULL);
+  while (time(NULL) < start+10 && !returnval)
+    {
+      if (grapple_client_intvar_get(client2,"inttest")==10)
+	returnval=1;
+
+      if (returnval==0)
+	microsleep(10000);
+    }
+
+  if (!returnval)
+    {
+      error="Client 2 did not get int variable";
+
+      grapple_client_destroy(client1);
+      grapple_client_destroy(client2);
+      grapple_server_destroy(server);
+
+      return returnval;
+    }
+
+  grapple_client_destroy(client1);
+  grapple_client_destroy(client2);
+  grapple_server_destroy(server);
+
+  return returnval;
+}
+
+static int client_sync_double(grapple_protocol protocol)
+{
+  grapple_server server;
+  grapple_client client1,client2;
+  int returnval=0;
+  time_t start;
+
+  server=create_server(protocol);
+  client1=create_client(protocol,1);
+  client2=create_client(protocol,2);
+
+  start=time(NULL);
+
+  while (time(NULL) < start+5 && !grapple_client_connected(client1))
+    microsleep(10000);
+  while (time(NULL) < start+5 && !grapple_client_connected(client2))
+    microsleep(10000);
+
+  grapple_client_doublevar_set(client1,"doubletest",1.234);
+
+  //Now wait for the clients to receive the message
+  start=time(NULL);
+  while (time(NULL) < start+10 && !returnval)
+    {
+      double got;
+
+      got=grapple_client_doublevar_get(client2,"doubletest");
+      if (got > 1.2 && got < 1.3)
+	returnval=1;
+
+      if (returnval==0)
+	microsleep(10000);
+    }
+
+  if (!returnval)
+    {
+      error="Client 2 did not get double variable";
+
+      grapple_client_destroy(client1);
+      grapple_client_destroy(client2);
+      grapple_server_destroy(server);
+
+      return returnval;
+    }
+
+  grapple_client_destroy(client1);
+  grapple_client_destroy(client2);
+  grapple_server_destroy(server);
+
+  return returnval;
+}
+
+static int client_sync_data(grapple_protocol protocol)
 {
   grapple_server server;
   grapple_client client1,client2;
@@ -5161,59 +5262,10 @@ static int client_sync_variable(grapple_protocol protocol)
   while (time(NULL) < start+5 && !grapple_client_connected(client2))
     microsleep(10000);
 
-  grapple_client_intvar_set(client1,"inttest",10);
-  grapple_client_doublevar_set(client1,"doubletest",1.234);
   strcpy(data,"Hello");
   grapple_client_datavar_set(client1,"datatest",data,5);
 
   //Now wait for the clients to receive the message
-  start=time(NULL);
-
-  while (time(NULL) < start+10 && !returnval)
-    {
-      if (grapple_client_intvar_get(client2,"inttest")==10)
-	returnval=1;
-
-      if (returnval==0)
-	microsleep(10000);
-    }
-
-  if (!returnval)
-    {
-      error="Client 2 did not get int variable";
-
-      grapple_client_destroy(client1);
-      grapple_client_destroy(client2);
-      grapple_server_destroy(server);
-  
-      return returnval;
-    }
-
-  start=time(NULL);
-  while (time(NULL) < start+10 && !returnval)
-    {
-      double got;
-
-      got=grapple_client_intvar_get(client2,"doubletest");
-      if (got > 1.2 && got < 1.3)
-      if (1.3>grapple_client_intvar_get(client2,"doubletest")>1.2)
-	returnval=1;
-
-      if (returnval==0)
-	microsleep(10000);
-    }
-
-  if (!returnval)
-    {
-      error="Client 2 did not get double variable";
-
-      grapple_client_destroy(client1);
-      grapple_client_destroy(client2);
-      grapple_server_destroy(server);
-  
-      return returnval;
-    }
-
   start=time(NULL);
   while (time(NULL) < start+10 && !returnval)
     {
@@ -5237,20 +5289,30 @@ static int client_sync_variable(grapple_protocol protocol)
       grapple_client_destroy(client1);
       grapple_client_destroy(client2);
       grapple_server_destroy(server);
-  
+
       return returnval;
     }
 
   grapple_client_destroy(client1);
   grapple_client_destroy(client2);
   grapple_server_destroy(server);
-  
+
   return returnval;
 }
 
-static int tcp_client_sync_variable(void)
+static int tcp_client_sync_int(void)
 {
-  return client_sync_variable(GRAPPLE_PROTOCOL_TCP);
+  return client_sync_int(GRAPPLE_PROTOCOL_TCP);
+}
+
+static int tcp_client_sync_double(void)
+{
+  return client_sync_double(GRAPPLE_PROTOCOL_TCP);
+}
+
+static int tcp_client_sync_data(void)
+{
+  return client_sync_data(GRAPPLE_PROTOCOL_TCP);
 }
 
 static int encyption_connect_with_keys(grapple_protocol protocol,
@@ -5700,9 +5762,19 @@ static int udp_client_sendconfirmgroupgroup(void)
   return client_sendconfirmgroupgroup(GRAPPLE_PROTOCOL_UDP);
 }
 
-static int udp_client_sync_variable(void)
+static int udp_client_sync_int(void)
 {
-  return client_sync_variable(GRAPPLE_PROTOCOL_UDP);
+  return client_sync_int(GRAPPLE_PROTOCOL_UDP);
+}
+
+static int udp_client_sync_double(void)
+{
+  return client_sync_double(GRAPPLE_PROTOCOL_UDP);
+}
+
+static int udp_client_sync_data(void)
+{
+  return client_sync_data(GRAPPLE_PROTOCOL_UDP);
 }
 
 static grapple_server create_lobbyserver(void)
@@ -8329,7 +8401,10 @@ int main(int argc,char **argv)
       runtest("TCP Client: Send with Confirm to everyone else",tcp_client_sendconfirmallother);
       runtest("TCP Client: Send with Confirm to a group",tcp_client_sendconfirmgroup);
       runtest("TCP Client: Send with Confirm to a group containing a group",tcp_client_sendconfirmgroupgroup);
-      runtest("TCP Client: Test Synchronised Variables",tcp_client_sync_variable);
+
+      runtest("TCP Client: Test Synchronised int",tcp_client_sync_int);
+      runtest("TCP Client: Test Synchronised double",tcp_client_sync_double);
+      runtest("TCP Client: Test Synchronised data",tcp_client_sync_data);
 
       runtest("TCP Encryption: Connect with no supplied keys",tcp_encyption_connect_nokeys);
       runtest("TCP Encryption: Connect with server only has key",tcp_encyption_connect_serverkeys);
@@ -8450,7 +8525,10 @@ int main(int argc,char **argv)
       runtest("UDP Client: Send with Confirm to everyone else",udp_client_sendconfirmallother);
       runtest("UDP Client: Send with Confirm to a group",udp_client_sendconfirmgroup);
       runtest("UDP Client: Send with Confirm to a group containing a group",udp_client_sendconfirmgroupgroup);
-      runtest("UDP Client: Test Synchronised Variables",udp_client_sync_variable);
+
+      runtest("UDP Client: Test Synchronised int",udp_client_sync_int);
+      runtest("UDP Client: Test Synchronised double",udp_client_sync_double);
+      runtest("UDP Client: Test Synchronised data",udp_client_sync_data);
 
       ///////////////////LOBBY
       
