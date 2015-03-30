@@ -430,7 +430,7 @@ grapple_error grapple_variable_get_double(grapple_variable_hash *hash,
       return GRAPPLE_ERROR_INCORRECT_VARIABLE_TYPE;
     }
 
-  *val=var->intdata;
+  *val=var->doubledata;
 
   grapple_thread_mutex_unlock(var->mutex); 
 
